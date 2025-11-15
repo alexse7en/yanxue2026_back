@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.yw.ps.dal.mysql.YwLevelGroupMapper">
+
+    <!--
+        一般情况下，尽可能使用 Mapper 进行 CRUD 增删改查即可。
+        无法满足的场景，例如说多表关联查询，才使用 XML 编写 SQL。
+        代码生成器暂时只生成 Mapper XML 文件本身，更多推荐 MybatisX 快速开发插件来生成查询。
+        文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
+     -->
+
+    <!-- 定义完整的结果映射 -->
+    <resultMap id="completeResultMap" type="cn.iocoder.yudao.module.yw.ps.vo.YwLevelGroupWithNormVo">
+        <id property="id" column="group_id"/>
+        <result property="name" column="group_name"/>
+        <result property="introduce" column="group_introduce"/>
+        <result property="avatar" column="group_avatar"/>
+        <result property="delFlag" column="group_del_flag"/>
+        <result property="createTime" column="group_create_time"/>
+        <result property="updateTime" column="group_update_time"/>
+        <result property="deleted" column="group_deleted"/>
+
+        <result property="creator" column="group_creator"/>
+        <result property="updater" column="group_updater"/>
+        <result property="maxScore" column="group_max_score"/>
+
+        <collection property="list" ofType="cn.iocoder.yudao.module.yw.ps.vo.YwLevelNormWithDetailVo" resultMap="normResultMap"/>
+    </resultMap>
+
+    <resultMap id="normResultMap" type="cn.iocoder.yudao.module.yw.ps.vo.YwLevelNormWithDetailVo">
+        <id property="id" column="norm_id"/>
+        <result property="name" column="norm_name"/>
+        <result property="introduce" column="norm_introduce"/>
+        <result property="countRules" column="norm_count_rules"/>
+        <result property="delFlag" column="norm_del_flag"/>
+        <result property="createTime" column="norm_create_time"/>
+        <result property="updateTime" column="norm_update_time"/>
+        <result property="deleted" column="norm_deleted"/>
+        <result property="creator" column="norm_creator"/>
+        <result property="updater" column="norm_updater"/>
+        <result property="maxScore" column="norm_max_score"/>
+        <result property="groupId" column="norm_group_id"/>
+        <result property="inputType" column="norm_input_type"/>
+
+        <collection property="list" ofType="cn.iocoder.yudao.module.yw.ps.vo.YwLevelDetailWithCommentVo" resultMap="detailResultMap"/>
+    </resultMap>
+
+    <resultMap id="detailResultMap" type="cn.iocoder.yudao.module.yw.ps.vo.YwLevelDetailWithCommentVo">
+        <id property="id" column="detail_id"/>
+        <result property="name" column="detail_name"/>
+        <result property="introduce" column="detail_introduce"/>
+        <result property="delFlag" column="detail_del_flag"/>
+        <result property="createTime" column="detail_create_time"/>
+        <result property="updateTime" column="detail_update_time"/>
+        <result property="deleted" column="detail_deleted"/>
+
+        <result property="creator" column="detail_creator"/>
+        <result property="updater" column="detail_updater"/>
+        <result property="detailScore" column="detail_score"/>
+        <result property="score" column="auth_detail_score"/>
+        <result property="normId" column="detail_norm_id"/>
+        <result property="detailIsSelected" column="detail_is_selected"/>
+        <result property="detailUrls" column="detail_url"/>
+
+
+        <collection property="comments" ofType="cn.iocoder.yudao.module.yw.ps.dal.dataobject.YwAuthCommentDO">
+            <id property="id" column="comment_id"/>
+            <result property="name" column="comment_name"/>
+            <result property="delFlag" column="comment_del_flag"/>
+            <result property="createTime" column="comment_create_time"/>
+            <result property="updateTime" column="comment_update_time"/>
+            <result property="deleted" column="comment_deleted"/>
+
+            <result property="creator" column="comment_creator"/>
+            <result property="updater" column="comment_updater"/>
+            <result property="score" column="comment_score"/>
+            <result property="commentType" column="comment_type"/>
+            <result property="status" column="comment_status"/>
+            <result property="authId" column="comment_auth_id"/>
+            <result property="detailId" column="comment_detail_id"/>
+            <result property="teacherId" column="comment_teacher_id"/>
+            <result property="bz" column="comment_bz"/>
+        </collection>
+    </resultMap>
+
+    <!-- 单条SQL查询所有数据 -->
+    <select id="selectAllGroupsWithDetails" resultMap="completeResultMap">
+        SELECT
+            /* 评审组字段 */
+            g.id as group_id,
+            g.name as group_name,
+            g.introduce as group_introduce,
+            g.avatar as group_avatar,
+            g.del_flag as group_del_flag,
+            g.create_time as group_create_time,
+            g.update_time as group_update_time,
+            g.deleted as group_deleted,
+            g.creator as group_creator,
+            g.updater as group_updater,
+            g.max_score as group_max_score,
+
+            /* 评审细则字段 */
+            n.id as norm_id,
+            n.name as norm_name,
+            n.introduce as norm_introduce,
+            n.count_rules as norm_count_rules,
+            n.del_flag as norm_del_flag,
+            n.create_time as norm_create_time,
+            n.update_time as norm_update_time,
+            n.deleted as norm_deleted,
+            n.tenant_id as norm_tenant_id,
+            n.creator as norm_creator,
+            n.updater as norm_updater,
+            n.max_score as norm_max_score,
+            n.group_id as norm_group_id,
+            n.input_type as norm_input_type,
+
+            /* 评审详情字段 */
+            x.id as detail_id,
+            d.name as detail_name,
+            d.introduce as detail_introduce,
+            d.del_flag as detail_del_flag,
+            d.create_time as detail_create_time,
+            d.update_time as detail_update_time,
+            d.deleted as detail_deleted,
+            d.creator as detail_creator,
+            d.updater as detail_updater,
+            d.score as detail_score,
+            d.norm_id as detail_norm_id,
+            x.iz_selected as detail_is_selected,
+            x.urls as detail_url,
+            x.score as auth_detail_score,
+
+            /* 评审结果字段 */
+            c.id as comment_id,
+            c.name as comment_name,
+            c.del_flag as comment_del_flag,
+            c.create_time as comment_create_time,
+            c.update_time as comment_update_time,
+            c.deleted as comment_deleted,
+            c.creator as comment_creator,
+            c.updater as comment_updater,
+            c.score as comment_score,
+            c.comment_type as comment_type,
+            c.status as comment_status,
+            c.auth_id as comment_auth_id,
+            c.detail_id as comment_detail_id,
+            c.teacher_id as comment_teacher_id,
+            c.bz as comment_bz
+        FROM yw_level_group g
+                 inner JOIN yw_level_group_norm n ON n.group_id = g.id AND n.del_flag = 0
+                 inner JOIN yw_level_group_detail d ON d.norm_id = n.id AND d.del_flag = 0
+                 inner join yw_auth_detail x on x.detail_id=d.id AND x.auth_id = #{authId}
+                 LEFT JOIN yw_auth_comment c ON c.detail_id = x.id  AND c.del_flag = 0
+        WHERE g.del_flag = 0
+        ORDER BY g.id, n.id, d.id, c.id
+    </select>
+</mapper>

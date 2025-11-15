@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.yw.ps.dal.mysql.YwLevelConditionMapper">
+
+    <!--
+        一般情况下，尽可能使用 Mapper 进行 CRUD 增删改查即可。
+        无法满足的场景，例如说多表关联查询，才使用 XML 编写 SQL。
+        代码生成器暂时只生成 Mapper XML 文件本身，更多推荐 MybatisX 快速开发插件来生成查询。
+        文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
+     -->
+    <resultMap id="levelConditionWithCommentResultMap" type="cn.iocoder.yudao.module.yw.ps.vo.YwLevelCondilWithCommentVo">
+        <!-- Base YwLevelConditionDO fields -->
+        <id property="id" column="condition_id"/>
+        <id property="urls" column="urls"/>
+        <result property="name" column="condition_name"/>
+        <result property="introduce" column="condition_introduce"/>
+        <result property="avatar" column="condition_avatar"/>
+        <result property="delFlag" column="condition_del_flag"/>
+        <result property="urls" column="condition_urls"/>
+        <result property="izForce" column="condition_iz_force"/>
+        <result property="inputType" column="condition_input_type"/>
+        <result property="examId" column="condition_exam_id"/>
+        <result property="levelId" column="condition_level_id"/>
+        <result property="createTime" column="condition_create_time"/>
+        <result property="updateTime" column="condition_update_time"/>
+        <result property="creator" column="condition_creator"/>
+        <result property="updater" column="condition_updater"/>
+
+        <!-- Additional fields in YwLevelCondilWithCommentVo -->
+        <result property="passed" column="condition_passed"/>
+        <result property="detailIsSelected" column="condition_is_selected"/>
+
+        <!-- Comments collection -->
+        <collection property="comments" ofType="cn.iocoder.yudao.module.yw.ps.dal.dataobject.YwAuthCommentDO">
+            <id property="id" column="comment_id"/>
+            <result property="name" column="comment_name"/>
+            <result property="delFlag" column="comment_del_flag"/>
+            <result property="score" column="comment_score"/>
+            <result property="commentType" column="comment_type"/>
+            <result property="status" column="comment_status"/>
+            <result property="authId" column="comment_auth_id"/>
+            <result property="detailId" column="comment_detail_id"/>
+            <result property="teacherId" column="comment_teacher_id"/>
+            <result property="bz" column="comment_bz"/>
+            <result property="createTime" column="comment_create_time"/>
+            <result property="updateTime" column="comment_update_time"/>
+            <result property="creator" column="comment_creator"/>
+            <result property="updater" column="comment_updater"/>
+        </collection>
+    </resultMap>
+
+    <!-- Single SQL query to fetch all data -->
+    <select id="selectAllCondiWithDetails" resultMap="levelConditionWithCommentResultMap">
+        SELECT
+--         b.id as id,
+            /* Level condition fields */
+            b.id as condition_id,
+            b.urls,
+            lc.name as condition_name,
+            lc.introduce as condition_introduce,
+            lc.avatar as condition_avatar,
+            lc.del_flag as condition_del_flag,
+            lc.urls as condition_urls,
+            lc.iz_force as condition_iz_force,
+            lc.input_type as condition_input_type,
+            lc.exam_id as condition_exam_id,
+            lc.level_id as condition_level_id,
+            lc.create_time as condition_create_time,
+            lc.update_time as condition_update_time,
+            lc.creator as condition_creator,
+            lc.updater as condition_updater,
+
+            /* Comment fields */
+            ac.id as comment_id,
+            ac.name as comment_name,
+            ac.del_flag as comment_del_flag,
+            ac.score as comment_score,
+            ac.comment_type as comment_type,
+            ac.status as comment_status,
+            ac.auth_id as comment_auth_id,
+            ac.detail_id as comment_detail_id,
+            ac.teacher_id as comment_teacher_id,
+            ac.bz as comment_bz,
+            ac.create_time as comment_create_time,
+            ac.update_time as comment_update_time,
+            ac.creator as comment_creator,
+            ac.updater as comment_updater
+        FROM
+            yw_level_condition lc
+                INNER JOIN yw_auth_condition b on lc.id=b.condi_id
+
+                LEFT JOIN
+            yw_auth_comment ac ON b.id = ac.detail_id AND ac.del_flag = 0
+        WHERE
+            lc.del_flag = 0 and b.auth_id=#{authId}
+        ORDER BY
+            lc.id, ac.id
+    </select>
+</mapper>

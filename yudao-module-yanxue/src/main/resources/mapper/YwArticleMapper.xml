@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.yw.dal.mysql.YwArticleMapper">
+
+    <!--
+        一般情况下，尽可能使用 Mapper 进行 CRUD 增删改查即可。
+        无法满足的场景，例如说多表关联查询，才使用 XML 编写 SQL。
+        代码生成器暂时只生成 Mapper XML 文件本身，更多推荐 MybatisX 快速开发插件来生成查询。
+        文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
+     -->
+
+    <select id="getArticleWithUpvote" resultType="cn.iocoder.yudao.module.yw.vo.YwArticleUpvoteVO">
+        select a.*,
+               CASE
+                   WHEN EXISTS (SELECT 1 FROM yw_article_upvote b WHERE b.article_id = a.id and b.member_id=#{memberId})
+                       THEN 1
+                   ELSE 0
+                   END as upvote_flag
+        from yw_article a
+        where a.id=#{id}
+
+
+    </select>
+    <select id="my" resultType="cn.iocoder.yudao.module.yw.dal.dataobject.YwArticleDO">
+        select a.*
+        from yw_article a
+        inner join yw_auth_product b on a.spu_id=b.id
+        where b.member_id=#{memberId}
+        order by a.create_time desc
+
+
+    </select>
+    <select id="getArticleListWithAuthor" resultType="cn.iocoder.yudao.module.yw.vo.YwArticleWithAuthorVO">
+        SELECT a.*, c.name, c.avatar
+        FROM yw_article a
+        INNER JOIN yw_auth_product b ON a.spu_id = b.id and b.status='10'
+        INNER JOIN member_user c ON b.member_id = c.id
+        <where>
+            <if test="reqVO.category != null">
+                AND a.category = #{reqVO.category}
+            </if>
+            <if test="reqVO.title != null and reqVO.title != ''">
+                AND a.title LIKE CONCAT('%', #{reqVO.title}, '%')
+            </if>
+            <if test="reqVO.author != null">
+                AND a.author = #{reqVO.author}
+            </if>
+            <if test="reqVO.content != null and reqVO.content != ''">
+                AND a.content LIKE CONCAT('%', #{reqVO.content}, '%')
+            </if>
+            <if test="reqVO.introduction != null and reqVO.introduction != ''">
+                AND a.introduction LIKE CONCAT('%', #{reqVO.introduction}, '%')
+            </if>
+            <if test="reqVO.status != null">
+                AND a.status = #{reqVO.status}
+            </if>
+            <if test="reqVO.recommendHot != null">
+                AND a.recommend_hot = #{reqVO.recommendHot}
+            </if>
+            <if test="reqVO.recommendBanner != null">
+                AND a.recommend_banner = #{reqVO.recommendBanner}
+            </if>
+            <if test="reqVO.spuId != null">
+                AND a.spu_id = #{reqVO.spuId}
+            </if>
+            <if test="reqVO.classification != null">
+                AND a.classification = #{reqVO.classification}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+        <if test="reqVO.limit != null and reqVO.limit > 0">
+            LIMIT #{reqVO.limit}
+        </if>
+    </select>
+</mapper>
