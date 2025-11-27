@@ -43,6 +43,6 @@ public interface ErrorCodeConstants {
     ErrorCode MEMBER_LEVEL_ADDRESS_NOT_EXISTS = new ErrorCode(101801, "用户收件地址不存在");
 
     ErrorCode YW_ARTICLE_UPVOTE_NOT_EXISTS = new ErrorCode(101901, "文章管理不存在");
-
+    ErrorCode STUDY_BASE_NOT_EXISTS = new ErrorCode(102001, "基地组织不存在");
 }
 
