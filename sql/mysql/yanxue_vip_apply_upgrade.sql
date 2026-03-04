@@ -1,100 +1,40 @@
--- VIP / ORG apply related tables
-CREATE TABLE IF NOT EXISTS `yw_vip_apply` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `member_id` bigint NOT NULL,
-  `apply_status` tinyint NOT NULL DEFAULT 0 COMMENT '0草稿 1已提交',
-  `payload_json` longtext NULL,
-  `submit_time` datetime NULL,
-  `creator` varchar(64) DEFAULT '',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updater` varchar(64) DEFAULT '',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` bit(1) NOT NULL DEFAULT b'0',
-  PRIMARY KEY (`id`),
-  KEY `idx_member_id` (`member_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 仅补充/修正真实库表结构（不再创建临时表名）
 
-CREATE TABLE IF NOT EXISTS `yw_yanxue_vipinfo` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `member_id` bigint NOT NULL,
-  `membership_start_date` date NULL,
-  `membership_end_date` date NULL,
-  `token_balance` decimal(18,2) NOT NULL DEFAULT 0,
-  `payload_json` longtext NULL,
-  `status` tinyint NOT NULL DEFAULT 1,
-  `creator` varchar(64) DEFAULT '',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updater` varchar(64) DEFAULT '',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` bit(1) NOT NULL DEFAULT b'0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_member_id` (`member_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 1) VIP 信息扩展字段
+ALTER TABLE `yw_yanxue_vipinfo`
+    ADD COLUMN IF NOT EXISTS `membership_start_date` date DEFAULT NULL COMMENT '会员有效期开始日期',
+    ADD COLUMN IF NOT EXISTS `membership_end_date` date DEFAULT NULL COMMENT '会员有效期结束日期',
+    ADD COLUMN IF NOT EXISTS `token_balance` decimal(10,2) DEFAULT '0.00' COMMENT '会员代币余额';
 
-CREATE TABLE IF NOT EXISTS `yw_vipinfo_apply` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `vipinfo_id` bigint NULL,
-  `member_id` bigint NOT NULL,
-  `apply_status` tinyint NOT NULL DEFAULT 1 COMMENT '1待审核 2通过 3驳回',
-  `payload_json` longtext NULL,
-  `submit_time` datetime NULL,
-  `creator` varchar(64) DEFAULT '',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updater` varchar(64) DEFAULT '',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` bit(1) NOT NULL DEFAULT b'0',
-  PRIMARY KEY (`id`),
-  KEY `idx_member_id` (`member_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 2) orginfo 表重复列修正：若存在第二个 fulltime_tutor_count，请重命名为 cert_fulltime_tutor_count
+-- 注意：以下语句需要根据线上实际列名执行；若已修正可跳过。
+-- ALTER TABLE `yw_yanxue_orginfo` RENAME COLUMN `fulltime_tutor_count` TO `cert_fulltime_tutor_count`;
 
-CREATE TABLE IF NOT EXISTS `yw_org_apply_record` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `member_id` bigint NOT NULL,
-  `apply_type` varchar(32) NOT NULL,
-  `apply_status` tinyint NOT NULL DEFAULT 0 COMMENT '0草稿 1已提交',
-  `payload_json` longtext NULL,
-  `submit_time` datetime NULL,
-  `creator` varchar(64) DEFAULT '',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updater` varchar(64) DEFAULT '',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` bit(1) NOT NULL DEFAULT b'0',
-  PRIMARY KEY (`id`),
-  KEY `idx_member_type` (`member_id`,`apply_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `yw_orginfo` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `member_id` bigint NOT NULL,
-  `org_name` varchar(255) NULL,
-  `payload_json` longtext NULL,
-  `status` tinyint NOT NULL DEFAULT 1,
-  `creator` varchar(64) DEFAULT '',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updater` varchar(64) DEFAULT '',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` bit(1) NOT NULL DEFAULT b'0',
-  PRIMARY KEY (`id`),
-  KEY `idx_member_id` (`member_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `yw_orginfo_apply` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `orginfo_id` bigint NOT NULL,
-  `member_id` bigint NOT NULL,
-  `apply_status` tinyint NOT NULL DEFAULT 1 COMMENT '1待审核 2通过 3驳回',
-  `payload_json` longtext NULL,
-  `submit_time` datetime NULL,
-  `creator` varchar(64) DEFAULT '',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updater` varchar(64) DEFAULT '',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` bit(1) NOT NULL DEFAULT b'0',
-  PRIMARY KEY (`id`),
-  KEY `idx_member_org` (`member_id`,`orginfo_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 增量变更：若已有表则补字段
-ALTER TABLE `yw_yanxue_vipinfo` ADD COLUMN IF NOT EXISTS `membership_start_date` date NULL;
-ALTER TABLE `yw_yanxue_vipinfo` ADD COLUMN IF NOT EXISTS `membership_end_date` date NULL;
-ALTER TABLE `yw_yanxue_vipinfo` ADD COLUMN IF NOT EXISTS `token_balance` decimal(18,2) NOT NULL DEFAULT 0;
+-- 3) 如不存在则创建 yw_yanxue_orginfo_apply
+CREATE TABLE IF NOT EXISTS `yw_yanxue_orginfo_apply` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `orginfo_id` bigint(20) NOT NULL COMMENT '关联二级认证信息表ID',
+    `user_id` bigint(20) NOT NULL COMMENT '提交申请的用户ID',
+    `apply_status` tinyint(4) DEFAULT '0' COMMENT '申请状态：0-待审核 1-审核通过 2-审核拒绝',
+    `audit_remark` varchar(500) DEFAULT NULL COMMENT '审核备注/拒绝原因',
+    `audit_time` datetime DEFAULT NULL COMMENT '审核时间',
+    `auditor_id` bigint(20) DEFAULT NULL COMMENT '审核人ID',
+    `unit_name` varchar(200) DEFAULT NULL COMMENT '单位名称',
+    `destination_name` varchar(200) DEFAULT NULL COMMENT '目的地名称',
+    `base_theme` varchar(100) DEFAULT NULL COMMENT '基地主题',
+    `unit_type` varchar(50) DEFAULT NULL COMMENT '单位性质',
+    `address` varchar(200) DEFAULT NULL COMMENT '通讯地址',
+    `contact_person` varchar(50) DEFAULT NULL COMMENT '联系人',
+    `contact_phone` varchar(20) DEFAULT NULL COMMENT '电话',
+    `contact_email` varchar(100) DEFAULT NULL COMMENT '电子信箱',
+    `fulltime_tutor_count` int(11) DEFAULT '0' COMMENT '专职研学指导师人数',
+    `cert_fulltime_tutor_count` int(11) DEFAULT NULL COMMENT '持证专职导师人数',
+    `parttime_tutor_count` int(11) DEFAULT '0' COMMENT '兼职研学指导师人数',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` tinyint(1) DEFAULT '0' COMMENT '逻辑删除',
+    `tenant_id` bigint(20) DEFAULT NULL COMMENT '租户ID',
+    PRIMARY KEY (`id`),
+    KEY `idx_orginfo_id` (`orginfo_id`),
+    KEY `idx_apply_status` (`apply_status`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='二级认证信息编辑申请表';

@@ -1,28 +1,14 @@
-package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
+package cn.iocoder.yudao.module.yw.vo.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
 
-@TableName("yw_yanxue_vip_apply")
-@KeySequence("yw_yanxue_vip_apply_seq")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class YwVipApplyDO extends TenantBaseDO {
-
-    @TableId
+public class YwVipApplySaveReqVO {
     private Long id;
-    private Long userId;
-    private Integer applyStatus;
     private String filePath;
     private String fileType;
-    private Integer parseStatus;
-    private String parseError;
     private String companyName;
     private String companyAddress;
     private String companyPhone;

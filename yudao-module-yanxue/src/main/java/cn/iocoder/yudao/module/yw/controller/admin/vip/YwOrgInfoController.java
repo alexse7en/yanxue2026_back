@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.yw.controller.admin.vip;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwOrgInfoDO;
 import cn.iocoder.yudao.module.yw.service.vip.YwVipFacadeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -26,7 +26,7 @@ public class YwOrgInfoController {
     @GetMapping("/list-my")
     @Operation(summary = "查询我的已认证单位列表")
     @PreAuthorize("@ss.hasPermission('yw:yw-orginfo:query')")
-    public CommonResult<List<Map<String, Object>>> listMy() {
+    public CommonResult<List<YwOrgInfoDO>> listMy() {
         return success(vipFacadeService.listMyOrgInfo());
     }
 }

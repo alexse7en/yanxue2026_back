@@ -1,44 +1,37 @@
 package cn.iocoder.yudao.module.yw.service.vip;
 
-import cn.iocoder.yudao.module.yw.vo.vip.GenericApplyReqVO;
-import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwOrgInfoDO;
+import cn.iocoder.yudao.module.yw.dal.dataobject.vip.*;
+import cn.iocoder.yudao.module.yw.vo.vip.*;
 
 import java.util.List;
-import java.util.Map;
 
 public interface YwVipFacadeService {
 
-    Map<String, Object> getMyVipApply();
+    YwOrgApplyRecordDO getMyOrgApply(String applyType);
 
-    Long createVipApply(GenericApplyReqVO reqVO);
+    Long saveOrgApplyDraft(YwOrgApplySaveReqVO reqVO);
 
-    void updateVipApply(GenericApplyReqVO reqVO);
+    boolean submitOrgApply(YwOrgApplySaveReqVO reqVO);
 
-    Long saveVipApplyDraft(GenericApplyReqVO reqVO);
+    List<YwOrgInfoDO> listMyOrgInfo();
 
-    boolean submitVipApply(GenericApplyReqVO reqVO);
+    YwOrgInfoApplyDO getLatestMyOrgInfoApply(Long orginfoId);
 
-    Map<String, Object> getMyVipInfo();
+    Long createOrgInfoApply(YwOrgInfoApplySaveReqVO reqVO);
 
-    Long createVipInfoApply(GenericApplyReqVO reqVO);
+    void updateOrgInfoApply(YwOrgInfoApplySaveReqVO reqVO);
 
-    void updateVipInfoApply(GenericApplyReqVO reqVO);
+    YwVipApplyDO getMyVipApply();
 
-    Map<String, Object> getLatestMyVipInfoApply();
+    Long saveVipApplyDraft(YwVipApplySaveReqVO reqVO);
 
-    Map<String, Object> getMyOrgApply(String applyType);
+    boolean submitVipApply(YwVipApplySaveReqVO reqVO);
 
-    Long saveOrgApplyDraft(GenericApplyReqVO reqVO);
+    YwVipInfoDO getMyVipInfo();
 
-    boolean submitOrgApply(GenericApplyReqVO reqVO);
+    YwVipInfoApplyDO getLatestMyVipInfoApply();
 
-    List<Map<String, Object>> listMyOrgInfo();
+    Long createVipInfoApply(YwVipInfoApplySaveReqVO reqVO);
 
-    Map<String, Object> getLatestMyOrgInfoApply(Long orginfoId);
-
-    Long createOrgInfoApply(GenericApplyReqVO reqVO);
-
-    void updateOrgInfoApply(GenericApplyReqVO reqVO);
-
-    Map<String, Object> parseFile(String scene, String applyType, String filePath, String fileType);
+    void updateVipInfoApply(YwVipInfoApplySaveReqVO reqVO);
 }

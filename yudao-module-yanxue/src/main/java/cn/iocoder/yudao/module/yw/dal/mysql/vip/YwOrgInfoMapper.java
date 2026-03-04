@@ -10,10 +10,9 @@ import java.util.List;
 @Mapper
 public interface YwOrgInfoMapper extends BaseMapperX<YwOrgInfoDO> {
 
-    default List<YwOrgInfoDO> selectMyPassedList(Long memberId) {
+    default List<YwOrgInfoDO> selectListByUserId(Long userId) {
         return selectList(new LambdaQueryWrapperX<YwOrgInfoDO>()
-                .eq(YwOrgInfoDO::getMemberId, memberId)
-                .eq(YwOrgInfoDO::getStatus, 1)
-                .orderByDesc(YwOrgInfoDO::getUpdateTime));
+                .eq(YwOrgInfoDO::getUserId, userId)
+                .orderByDesc(YwOrgInfoDO::getId));
     }
 }

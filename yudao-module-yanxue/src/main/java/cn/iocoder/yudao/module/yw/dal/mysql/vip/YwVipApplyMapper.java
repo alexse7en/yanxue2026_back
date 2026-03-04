@@ -8,10 +8,10 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface YwVipApplyMapper extends BaseMapperX<YwVipApplyDO> {
 
-    default YwVipApplyDO selectLatestByMemberId(Long memberId) {
+    default YwVipApplyDO selectLatestByUserId(Long userId) {
         return selectOne(new LambdaQueryWrapperX<YwVipApplyDO>()
-                .eq(YwVipApplyDO::getMemberId, memberId)
-                .orderByDesc(YwVipApplyDO::getUpdateTime)
+                .eq(YwVipApplyDO::getUserId, userId)
+                .orderByDesc(YwVipApplyDO::getId)
                 .last("limit 1"));
     }
 }

@@ -8,11 +8,11 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface YwOrgInfoApplyMapper extends BaseMapperX<YwOrgInfoApplyDO> {
 
-    default YwOrgInfoApplyDO selectLatestByMemberAndOrginfoId(Long memberId, Long orginfoId) {
+    default YwOrgInfoApplyDO selectLatestByUserAndOrginfoId(Long userId, Long orginfoId) {
         return selectOne(new LambdaQueryWrapperX<YwOrgInfoApplyDO>()
-                .eq(YwOrgInfoApplyDO::getMemberId, memberId)
+                .eq(YwOrgInfoApplyDO::getUserId, userId)
                 .eq(YwOrgInfoApplyDO::getOrginfoId, orginfoId)
-                .orderByDesc(YwOrgInfoApplyDO::getUpdateTime)
+                .orderByDesc(YwOrgInfoApplyDO::getId)
                 .last("limit 1"));
     }
 }

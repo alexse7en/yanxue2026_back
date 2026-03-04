@@ -1,26 +1,14 @@
-package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
+package cn.iocoder.yudao.module.yw.vo.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@TableName("yw_yanxue_vipinfo")
-@KeySequence("yw_yanxue_vipinfo_seq")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class YwVipInfoDO extends TenantBaseDO {
-
-    @TableId
+public class YwVipInfoApplySaveReqVO {
     private Long id;
-    private Long userId;
-    private Long applyId;
-    private String memberNo;
+    private Long vipinfoId;
     private String companyName;
     private String companyAddress;
     private String companyPhone;
@@ -39,6 +27,5 @@ public class YwVipInfoDO extends TenantBaseDO {
     private String repEmail;
     private LocalDate membershipStartDate;
     private LocalDate membershipEndDate;
-    private BigDecimal tokenBalance;
-    private Integer status;
+    private BigDecimal tokenBalanceChange;
 }
