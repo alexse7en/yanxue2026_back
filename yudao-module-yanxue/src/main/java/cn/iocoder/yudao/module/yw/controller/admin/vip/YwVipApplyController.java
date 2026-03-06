@@ -46,14 +46,14 @@ public class YwVipApplyController {
     @PostMapping("/parse")
     @Operation(summary = "解析上传文件")
     @PreAuthorize("@ss.hasPermission('yw:yw-vip-apply:parse')")
-    public CommonResult<Object> parse(@RequestBody ParseReqVO reqVO) {
-        return CommonResult.error(501, "解析暂未实现");
+    public CommonResult<YwVipApplyDO> parse(@RequestBody ParseReqVO reqVO) {
+        return success(vipFacadeService.parseVipApply(reqVO));
     }
 
-    @GetMapping("/download-template")
+/*    @GetMapping("/download-template")
     @Operation(summary = "下载模板")
     @PreAuthorize("@ss.hasPermission('yw:yw-vip-apply:download-template')")
     public CommonResult<Object> downloadTemplate(@RequestParam("type") String type) {
         return CommonResult.error(501, "下载模板暂未实现");
-    }
+    }*/
 }

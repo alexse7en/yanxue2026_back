@@ -29,6 +29,9 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
     private YwOrgInfoMapper orgInfoMapper;
     @Resource
     private YwOrgInfoApplyMapper orgInfoApplyMapper;
+    @Resource
+    private YwVipApplyDocxParser ywVipApplyDocxParser;
+
 
     @Override
     public YwOrgApplyRecordDO getMyOrgApply(String applyType) {
@@ -273,5 +276,103 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
             throw new ServiceException(401, "未登录");
         }
         return userId;
+    }
+
+    @Override
+    public YwVipApplyDO parseVipApply(ParseReqVO reqVO) {
+        Long userId = getLoginUserId();
+
+        String fileType = resolveFileType(reqVO);
+        if (!"docx".equalsIgnoreCase(fileType)) {
+            throw new ServiceException(400, "目前仅支持上传 docx 模板");
+        }
+
+        YwVipApplyDO data = vipApplyMapper.selectLatestByUserId(userId);
+        if (data == null) {
+            data = new YwVipApplyDO();
+            data.setUserId(userId);
+            data.setApplyStatus(0);
+        }
+
+        data.setFilePath(reqVO.getFilePath());
+        data.setFileType("docx");
+
+        try {
+            YwVipApplySaveReqVO parsed = ywVipApplyDocxParser.parse(reqVO.getFilePath());
+            mergeParsedFields(data, parsed);
+            data.setParseStatus(1);
+            data.setParseError(null);
+        } catch (Exception e) {
+            data.setParseStatus(2);
+            data.setParseError(limitMsg(e.getMessage()));
+        }
+
+        saveOrUpdateVipApplyRecord(data);
+        return requireVipApply(data.getId());
+    }
+
+    private String resolveFileType(ParseReqVO reqVO) {
+        if (reqVO.getFileType() != null && !reqVO.getFileType().trim().isEmpty()) {
+            return reqVO.getFileType().trim().toLowerCase();
+        }
+        String filePath = reqVO.getFilePath();
+        int index = filePath.lastIndexOf('.');
+        if (index < 0 || index == filePath.length() - 1) {
+            return "";
+        }
+        return filePath.substring(index + 1).toLowerCase();
+    }
+
+    private void saveOrUpdateVipApplyRecord(YwVipApplyDO data) {
+        if (data.getId() == null) {
+            vipApplyMapper.insert(data);
+        } else {
+            vipApplyMapper.updateById(data);
+        }
+    }
+
+    private String limitMsg(String msg) {
+        if (msg == null || msg.trim().isEmpty()) {
+            return "文件解析失败";
+        }
+        return msg.length() > 500 ? msg.substring(0, 500) : msg;
+    }
+
+    private void mergeParsedFields(YwVipApplyDO target, YwVipApplySaveReqVO source) {
+        setIfHasText(source.getCompanyName(), target::setCompanyName);
+        setIfHasText(source.getCompanyAddress(), target::setCompanyAddress);
+        setIfHasText(source.getCompanyPhone(), target::setCompanyPhone);
+        setIfHasText(source.getWebsite(), target::setWebsite);
+        setIfNotNull(source.getEstablishedDate(), target::setEstablishedDate);
+        setIfHasText(source.getBusinessScope(), target::setBusinessScope);
+        setIfHasText(source.getCompanyIntro(), target::setCompanyIntro);
+
+        setIfHasText(source.getRepName(), target::setRepName);
+        setIfHasText(source.getRepPolitical(), target::setRepPolitical);
+        setIfHasText(source.getRepGender(), target::setRepGender);
+        setIfHasText(source.getRepEducation(), target::setRepEducation);
+        setIfHasText(source.getRepPhone(), target::setRepPhone);
+        setIfHasText(source.getRepPosition(), target::setRepPosition);
+        setIfHasText(source.getRepEmail(), target::setRepEmail);
+        setIfHasText(source.getRepIdcard(), target::setRepIdcard);
+
+        setIfHasText(source.getContactName(), target::setContactName);
+        setIfHasText(source.getContactPhone(), target::setContactPhone);
+        setIfHasText(source.getCompanyType(), target::setCompanyType);
+        setIfHasText(source.getApplyLevel(), target::setApplyLevel);
+        setIfNotNull(source.getApplyDate(), target::setApplyDate);
+        setIfHasText(source.getMemberNo(), target::setMemberNo);
+    }
+
+    private void setIfHasText(String value, java.util.function.Consumer<String> setter) {
+        if (value != null && !value.trim().isEmpty()) {
+            setter.accept(value.trim());
+        }
+    }
+
+    private <T> void setIfNotNull(T value, java.util.function.Consumer<T> setter) {
+        if (value != null) {
+            setter.accept(value);
+        }
     }
 }

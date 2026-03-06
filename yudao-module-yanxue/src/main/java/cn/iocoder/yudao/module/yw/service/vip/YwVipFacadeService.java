@@ -27,6 +27,8 @@ public interface YwVipFacadeService {
 
     boolean submitVipApply(YwVipApplySaveReqVO reqVO);
 
+    YwVipApplyDO parseVipApply(ParseReqVO reqVO);
+
     YwVipInfoDO getMyVipInfo();
 
     YwVipInfoApplyDO getLatestMyVipInfoApply();
