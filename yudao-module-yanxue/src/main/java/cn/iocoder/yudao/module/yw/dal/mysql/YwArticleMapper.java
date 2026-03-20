@@ -1,8 +1,8 @@
 package cn.iocoder.yudao.module.yw.dal.mysql;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.yw.dal.dataobject.YwArticleDO;
 import cn.iocoder.yudao.module.yw.vo.YwArticlePageReqLimitVO;
 import cn.iocoder.yudao.module.yw.vo.YwArticleUpvoteVO;
@@ -37,7 +37,7 @@ public interface YwArticleMapper extends BaseMapperX<YwArticleDO> {
     }
 
     default List<YwArticleDO> selectList(YwArticlePageReqVO reqVO) {
-        return selectList( new LambdaQueryWrapperX<YwArticleDO>()
+        return selectList(new LambdaQueryWrapperX<YwArticleDO>()
                 .eqIfPresent(YwArticleDO::getCategory, reqVO.getCategory())
                 .likeIfPresent(YwArticleDO::getTitle, reqVO.getTitle())
                 .eqIfPresent(YwArticleDO::getAuthor, reqVO.getAuthor())
@@ -62,5 +62,6 @@ public interface YwArticleMapper extends BaseMapperX<YwArticleDO> {
     int deleteUpvoteCount(Long id);
 
     List<YwArticleDO> my(Long memberId);
+
     List<YwArticleWithAuthorVO> getArticleListWithAuthor(@Param("reqVO") YwArticlePageReqLimitVO pageReqVO);
 }

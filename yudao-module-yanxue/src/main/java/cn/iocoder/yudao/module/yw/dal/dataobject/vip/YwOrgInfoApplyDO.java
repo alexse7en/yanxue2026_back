@@ -32,6 +32,6 @@ public class YwOrgInfoApplyDO extends TenantBaseDO {
     private String contactPhone;
     private String contactEmail;
     private Integer fulltimeTutorCount;
-    private Integer certFulltimeTutorCount;
+    private Integer certTutorCount;
     private Integer parttimeTutorCount;
 }

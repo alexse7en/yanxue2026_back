@@ -99,4 +99,56 @@
         where a.auth_id=#{authId} and a.iz_selected='1'
         order by group_id,norm_id,detail_id
     </select>
+
+    <select id="selectPortalStudentCertList" resultType="cn.iocoder.yudao.module.yw.vo.portal.resp.YwPortalCertRespVO">
+        SELECT a.id,
+               CAST(COALESCE(addr.level_id, a.level_id) AS CHAR) AS certNo,
+               lv.name AS certName,
+               mu.name AS userName,
+               mu.idcard AS idCard,
+               NULL AS certImageUrl,
+               a.update_time AS issueDate
+        FROM yw_auth_level a
+                 INNER JOIN member_user mu ON a.member_id = mu.id
+                 LEFT JOIN yw_member_level_address addr ON addr.member_id = a.member_id AND addr.level_id = a.level_id
+                 LEFT JOIN yw_level lv ON lv.id = a.level_id
+        WHERE a.status = '10'
+          AND (mu.izteacher IS NULL OR mu.izteacher &lt;&gt; 1)
+        <if test="reqVO.name != null and reqVO.name != ''">
+            AND mu.name LIKE CONCAT('%', #{reqVO.name}, '%')
+        </if>
+        <if test="reqVO.idCardSuffix != null and reqVO.idCardSuffix != ''">
+            AND mu.idcard LIKE CONCAT('%', #{reqVO.idCardSuffix})
+        </if>
+        <if test="reqVO.certNo != null and reqVO.certNo != ''">
+            AND CAST(COALESCE(addr.level_id, a.level_id) AS CHAR) = #{reqVO.certNo}
+        </if>
+        ORDER BY a.update_time DESC, a.id DESC
+    </select>
+
+    <select id="selectPortalTutorCertList" resultType="cn.iocoder.yudao.module.yw.vo.portal.resp.YwPortalCertRespVO">
+        SELECT a.id,
+               CAST(COALESCE(addr.level_id, a.level_id) AS CHAR) AS certNo,
+               lv.name AS certName,
+               mu.name AS userName,
+               mu.idcard AS idCard,
+               NULL AS certImageUrl,
+               a.update_time AS issueDate
+        FROM yw_auth_level a
+                 INNER JOIN member_user mu ON a.member_id = mu.id
+                 LEFT JOIN yw_member_level_address addr ON addr.member_id = a.member_id AND addr.level_id = a.level_id
+                 LEFT JOIN yw_level lv ON lv.id = a.level_id
+        WHERE a.status = '10'
+          AND mu.izteacher = 1
+        <if test="reqVO.name != null and reqVO.name != ''">
+            AND mu.name LIKE CONCAT('%', #{reqVO.name}, '%')
+        </if>
+        <if test="reqVO.idCardSuffix != null and reqVO.idCardSuffix != ''">
+            AND mu.idcard LIKE CONCAT('%', #{reqVO.idCardSuffix})
+        </if>
+        <if test="reqVO.certNo != null and reqVO.certNo != ''">
+            AND CAST(COALESCE(addr.level_id, a.level_id) AS CHAR) = #{reqVO.certNo}
+        </if>
+        ORDER BY a.update_time DESC, a.id DESC
+    </select>
 </mapper>

@@ -1,22 +1,15 @@
-package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
+package cn.iocoder.yudao.module.yw.vo.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@TableName("yw_yanxue_vip_apply")
-@KeySequence("yw_yanxue_vip_apply_seq")
+@Schema(description = "管理后台 - 会员申请审核 Response VO")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class YwVipApplyDO extends TenantBaseDO {
+public class YwVipApplyAuditRespVO {
 
-    @TableId
     private Long id;
     private Long userId;
     private Integer applyStatus;
@@ -45,10 +38,8 @@ public class YwVipApplyDO extends TenantBaseDO {
     private String applyLevel;
     private LocalDate applyDate;
     private String memberNo;
-    // 若数据库列名不同，请按实际表结构调整
     private String auditRemark;
-    // 若数据库列名不同，请按实际表结构调整
     private LocalDateTime auditTime;
-    // 若数据库列名不同，请按实际表结构调整
     private Long auditorId;
+    private LocalDateTime createTime;
 }

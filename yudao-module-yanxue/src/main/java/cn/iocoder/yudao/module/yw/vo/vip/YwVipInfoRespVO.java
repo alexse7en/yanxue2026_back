@@ -1,22 +1,14 @@
-package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
+package cn.iocoder.yudao.module.yw.vo.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@TableName("yw_yanxue_vipinfo")
-@KeySequence("yw_yanxue_vipinfo_seq")
+@Schema(description = "管理后台 - 会员展示信息 Response VO")
 @Data
-//@EqualsAndHashCode(callSuper = true)
-public class YwVipInfoDO  {
+public class YwVipInfoRespVO {
 
-    @TableId
     private Long id;
     private Long userId;
     private Long applyId;
@@ -39,10 +31,8 @@ public class YwVipInfoDO  {
     private String repEmail;
     private LocalDate membershipStartDate;
     private LocalDate membershipEndDate;
-    private BigDecimal tokenBalance;
     private Integer status;
     private String honor;
     private Integer star;
     private String gallery;
-
 }

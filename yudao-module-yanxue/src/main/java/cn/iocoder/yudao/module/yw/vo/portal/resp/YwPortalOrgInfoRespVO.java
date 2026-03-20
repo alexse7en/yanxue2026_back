@@ -1,34 +1,16 @@
-package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
+package cn.iocoder.yudao.module.yw.vo.portal.resp;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * 二级认证信息展示 DO
- */
-@TableName("yw_yanxue_orginfo")
-@KeySequence("yw_yanxue_orginfo_seq")
+@Schema(description = "管理后台 - 首页资源中心 Response VO")
 @Data
-//@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class YwOrgInfoDO  {
+public class YwPortalOrgInfoRespVO {
 
-    @TableId
     private Long id;
     private Long userId;
     private Long vipinfoId;

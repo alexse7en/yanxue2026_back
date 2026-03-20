@@ -1,4 +1,4 @@
-﻿## 项目定位
+## 项目定位
 本仓库是基于 Yudao / ruoyi-vue-pro 风格的 Java 后端项目。
 后端采用模块化架构，业务代码应优先放入对应的 yudao-module-xxx 模块中，并遵循模块内既有的 controller / service / dal / api 分层方式。
 
@@ -32,6 +32,8 @@
 ### 1. Controller 层
 - Controller 只负责接口编排、参数接收、权限注解、结果返回，不承载核心业务逻辑。
 - 管理端接口优先放 controller.admin，App 端接口优先放 controller.app。
+- controller.app 主要给小程序 / App 前端使用；controller.admin 主要给 Web 前端使用。
+- 只要前端走 admin-api 链路，无论是否匿名可访问，接口都应优先放 controller.admin，不要误放到 controller.app。
 - Controller 入参优先使用 ReqVO，出参优先使用 RespVO / PageResult / CommonResult。
 - 不要在 Controller 直接操作 Mapper。
 - 不要在 Controller 里写复杂转换逻辑，优先放到 Convert 中。
@@ -93,3 +95,5 @@
 1. 先修正当前实现
 2. 再把这条经验补充到最合适位置的 AGENTS.md
 让后续任务继承
+
+

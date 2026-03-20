@@ -1,11 +1,9 @@
-package cn.iocoder.yudao.module.yw.enums;// TODO 待办：请将下面的错误码复制到 yudao-module-yw 模块的 ErrorCodeConstants 类中。注意，请给“TODO 补充编号”设置一个错误码编号！！！
-// ========== 教师 TODO 补充编号 ==========
-
+package cn.iocoder.yudao.module.yw.enums;
 
 import cn.iocoder.yudao.framework.common.exception.ErrorCode;
 
 public interface ErrorCodeConstants {
-    public ErrorCode TEACHER_NOT_EXISTS = new ErrorCode(10001, "教师不存在");
+    ErrorCode TEACHER_NOT_EXISTS = new ErrorCode(10001, "教师不存在");
     ErrorCode COURSE_NOT_EXISTS = new ErrorCode(10101, "课程不存在");
     ErrorCode CHAPTER_NOT_EXISTS = new ErrorCode(10201, "章节不存在");
 
@@ -44,5 +42,17 @@ public interface ErrorCodeConstants {
 
     ErrorCode YW_ARTICLE_UPVOTE_NOT_EXISTS = new ErrorCode(101901, "文章管理不存在");
     ErrorCode STUDY_BASE_NOT_EXISTS = new ErrorCode(102001, "基地组织不存在");
+    ErrorCode YW_PORTAL_CERT_QUERY_CONDITION_REQUIRED = new ErrorCode(102101, "证书查询需提供证书编号，或同时提供姓名和身份证后缀");
+    ErrorCode YW_VIP_APPLY_NOT_EXISTS = new ErrorCode(102201, "会员申请不存在");
+    ErrorCode YW_VIP_APPLY_STATUS_NOT_SUBMITTED = new ErrorCode(102202, "仅已提交待审核的会员申请可审核");
+    ErrorCode YW_VIP_APPLY_AUDIT_STATUS_INVALID = new ErrorCode(102203, "会员申请审核状态非法");
+    ErrorCode YW_VIP_APPLY_MEMBER_NO_REQUIRED = new ErrorCode(102204, "审核通过时会员编号不能为空");
+    ErrorCode YW_VIP_APPLY_MEMBER_NO_INVALID = new ErrorCode(102205, "会员编号格式不正确");
+    ErrorCode YW_VIP_APPLY_MEMBER_NO_DUPLICATE = new ErrorCode(102206, "会员编号已存在");
+    ErrorCode YW_VIPINFO_NOT_EXISTS = new ErrorCode(102301, "会员展示信息不存在");
+    ErrorCode YW_VIPINFO_APPLY_NOT_EXISTS = new ErrorCode(102302, "会员展示信息编辑申请不存在");
+    ErrorCode YW_VIPINFO_APPLY_DUPLICATE_PENDING = new ErrorCode(102303, "当前存在待审核中的展示信息申请，暂不可重复申请");
+    ErrorCode YW_VIPINFO_APPLY_STATUS_NOT_PENDING = new ErrorCode(102304, "仅待审核的展示信息申请可审核");
+    ErrorCode YW_VIPINFO_APPLY_AUDIT_STATUS_INVALID = new ErrorCode(102305, "会员展示信息申请审核状态非法");
+    ErrorCode YW_VIPINFO_APPLY_QUERY_PARAM_REQUIRED = new ErrorCode(102306, "查询会员展示信息申请时必须提供 id 或 userId");
 }
-
