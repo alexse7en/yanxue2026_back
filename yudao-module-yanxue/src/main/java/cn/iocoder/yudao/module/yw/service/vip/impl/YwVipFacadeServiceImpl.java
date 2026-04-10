@@ -24,7 +24,7 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
     @Resource
     private YwVipInfoApplyMapper vipInfoApplyMapper;
     @Resource
-    private YwOrgApplyRecordMapper orgApplyRecordMapper;
+    private YwOrgApplyMapper orgApplyMapper;
     @Resource
     private YwOrgInfoMapper orgInfoMapper;
     @Resource
@@ -34,14 +34,14 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
 
 
     @Override
-    public YwOrgApplyRecordDO getMyOrgApply(String applyType) {
-        return orgApplyRecordMapper.selectLatestByUserAndType(getLoginUserId(), applyType);
+    public YwOrgApplyDO getMyOrgApply(String applyType) {
+        return orgApplyMapper.selectLatestByUserAndType(getLoginUserId(), applyType);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long saveOrgApplyDraft(YwOrgApplySaveReqVO reqVO) {
-        YwOrgApplyRecordDO data = saveOrUpdateOrgApply(reqVO, 0);
+        YwOrgApplyDO data = saveOrUpdateOrgApply(reqVO, 0);
         return data.getId();
     }
 
@@ -156,17 +156,17 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
         vipInfoApplyMapper.updateById(update);
     }
 
-    private YwOrgApplyRecordDO saveOrUpdateOrgApply(YwOrgApplySaveReqVO reqVO, Integer applyStatus) {
+    private YwOrgApplyDO saveOrUpdateOrgApply(YwOrgApplySaveReqVO reqVO, Integer applyStatus) {
         Long userId = getLoginUserId();
         Long vipinfoId = resolveVipinfoId(reqVO.getVipinfoId(), userId);
 
-        YwOrgApplyRecordDO data;
+        YwOrgApplyDO data;
         if (reqVO.getId() == null) {
-            data = BeanUtils.toBean(reqVO, YwOrgApplyRecordDO.class);
+            data = BeanUtils.toBean(reqVO, YwOrgApplyDO.class);
             data.setUserId(userId);
             data.setVipinfoId(vipinfoId);
             data.setApplyStatus(applyStatus);
-            orgApplyRecordMapper.insert(data);
+            orgApplyMapper.insert(data);
             return data;
         }
 
@@ -174,12 +174,12 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
         if (!Objects.equals(data.getUserId(), userId)) {
             throw new ServiceException(403, "无权限更新该申请");
         }
-        YwOrgApplyRecordDO update = BeanUtils.toBean(reqVO, YwOrgApplyRecordDO.class);
+        YwOrgApplyDO update = BeanUtils.toBean(reqVO, YwOrgApplyDO.class);
         update.setId(data.getId());
         update.setUserId(data.getUserId());
         update.setVipinfoId(vipinfoId);
         update.setApplyStatus(applyStatus);
-        orgApplyRecordMapper.updateById(update);
+        orgApplyMapper.updateById(update);
         return requireOrgApply(data.getId());
     }
 
@@ -246,8 +246,8 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
         return data;
     }
 
-    private YwOrgApplyRecordDO requireOrgApply(Long id) {
-        YwOrgApplyRecordDO data = orgApplyRecordMapper.selectById(id);
+    private YwOrgApplyDO requireOrgApply(Long id) {
+        YwOrgApplyDO data = orgApplyMapper.selectById(id);
         if (data == null) {
             throw new ServiceException(404, "二级认证申请不存在");
         }
@@ -376,3 +376,6 @@ public class YwVipFacadeServiceImpl implements YwVipFacadeService {
         }
     }
 }
+
+
+

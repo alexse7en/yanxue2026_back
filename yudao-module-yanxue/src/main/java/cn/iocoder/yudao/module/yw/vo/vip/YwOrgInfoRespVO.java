@@ -1,30 +1,23 @@
-package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
+package cn.iocoder.yudao.module.yw.vo.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@TableName("yw_yanxue_orginfo_apply")
-@KeySequence("yw_yanxue_orginfo_apply_seq")
+@Schema(description = "管理后台 - 二级认证展示资料 Response VO")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class YwOrgInfoApplyDO extends TenantBaseDO {
+public class YwOrgInfoRespVO {
 
-    @TableId
     private Long id;
-    private Long orginfoId;
     private Long userId;
-    private Integer applyStatus;
-    private String auditRemark;
-    private LocalDateTime auditTime;
-    private Long auditorId;
+    private Long vipinfoId;
+    private Long applyId;
+    private String certNo;
+    private String orgType;
+    private Integer status;
     private String unitName;
     private String destinationName;
     private String baseTheme;
@@ -64,7 +57,7 @@ public class YwOrgInfoApplyDO extends TenantBaseDO {
     private String coverImage;
     private String logo;
     private String gallery;
+    private LocalDateTime certTime;
+    private LocalDate expireTime;
     private String unitProfile;
-
-    // 若数据库列名与默认驼峰转下划线规则不一致，请按实际列名补充 @TableField
 }

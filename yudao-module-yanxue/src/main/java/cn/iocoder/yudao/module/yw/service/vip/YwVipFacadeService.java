@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface YwVipFacadeService {
 
-    YwOrgApplyRecordDO getMyOrgApply(String applyType);
+    YwOrgApplyDO getMyOrgApply(String applyType);
 
     Long saveOrgApplyDraft(YwOrgApplySaveReqVO reqVO);
 

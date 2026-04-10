@@ -1,30 +1,34 @@
 package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@TableName("yw_yanxue_orginfo_apply")
-@KeySequence("yw_yanxue_orginfo_apply_seq")
+/**
+ * 机构认证申请 DO（对应 yw_yanxue_org_apply）
+ */
+@TableName("yw_yanxue_org_apply")
+@KeySequence("yw_yanxue_org_apply_seq")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class YwOrgInfoApplyDO extends TenantBaseDO {
+public class YwOrgApplyDO {
 
     @TableId
     private Long id;
-    private Long orginfoId;
     private Long userId;
+    private Long vipinfoId;
+    private String applyType;
     private Integer applyStatus;
-    private String auditRemark;
-    private LocalDateTime auditTime;
-    private Long auditorId;
+    private String applyNo;
+    private String filePath;
+    private String fileType;
+    private Integer parseStatus;
+    private String parseError;
+
     private String unitName;
     private String destinationName;
     private String baseTheme;
@@ -40,14 +44,6 @@ public class YwOrgInfoApplyDO extends TenantBaseDO {
     private Integer estimatedStudentsPerYear;
     private Integer maxStudentsPerTime;
     private BigDecimal fundInvestment;
-    private String baseType;
-    private String baseTypeOther;
-    private BigDecimal areaLand;
-    private BigDecimal areaBuilding;
-    private BigDecimal areaAvailable;
-    private Boolean hasAccommodation;
-    private Integer accommodationCapacity;
-    private String baseFeature;
     private LocalDate establishmentDate;
     private String legalPerson;
     private String legalPhone;
@@ -57,14 +53,15 @@ public class YwOrgInfoApplyDO extends TenantBaseDO {
     private Integer studyDeptStaffCount;
     private Integer fulltimeTutorCount;
     private Integer parttimeTutorCount;
-    private String institutionType;
-    private String institutionTypeOther;
-    private String productFeature;
-    private String annualVisitorsRange;
-    private String coverImage;
-    private String logo;
-    private String gallery;
     private String unitProfile;
 
-    // 若数据库列名与默认驼峰转下划线规则不一致，请按实际列名补充 @TableField
+    private String auditRemark;
+    private LocalDateTime auditTime;
+    private Long auditorId;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
+
+    // 以下两列在表中存在，如需参与业务查询/过滤可再补充对应使用
+    private Integer deleted;
+    private Long tenantId;
 }

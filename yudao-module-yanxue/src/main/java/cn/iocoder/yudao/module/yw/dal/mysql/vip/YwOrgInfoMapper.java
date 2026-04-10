@@ -19,6 +19,20 @@ public interface YwOrgInfoMapper extends BaseMapperX<YwOrgInfoDO> {
                 .orderByDesc(YwOrgInfoDO::getId));
     }
 
+    default YwOrgInfoDO selectByApplyId(Long applyId) {
+        return selectOne(new LambdaQueryWrapperX<YwOrgInfoDO>()
+                .eq(YwOrgInfoDO::getApplyId, applyId)
+                .last("limit 1"));
+    }
+
+    default YwOrgInfoDO selectByUserIdAndOrgType(Long userId, String orgType) {
+        return selectOne(new LambdaQueryWrapperX<YwOrgInfoDO>()
+                .eq(YwOrgInfoDO::getUserId, userId)
+                .eqIfPresent(YwOrgInfoDO::getOrgType, orgType)
+                .orderByDesc(YwOrgInfoDO::getId)
+                .last("limit 1"));
+    }
+
     default PageResult<YwOrgInfoDO> selectPortalPage(YwPortalOrgInfoPageReqVO reqVO) {
         LambdaQueryWrapperX<YwOrgInfoDO> queryWrapper = new LambdaQueryWrapperX<YwOrgInfoDO>()
                 .likeIfPresent(YwOrgInfoDO::getUnitName, reqVO.getUnitName())

@@ -7,29 +7,33 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@TableName("yw_yanxue_org_apply")
-@KeySequence("yw_yanxue_org_apply_seq")
+import java.time.LocalDateTime;
+
+/**
+ * 学生证书生成申请 DO
+ *
+ * 对应建议新增主表 yw_yanxue_cert_student_apply
+ */
+@TableName("yw_yanxue_cert_student_apply")
+@KeySequence("yw_yanxue_cert_student_apply_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class YwOrgApplyRecordDO extends TenantBaseDO {
+public class YwCertStudentApplyDO extends TenantBaseDO {
 
     @TableId
     private Long id;
     private Long userId;
     private Long vipinfoId;
-    private String applyType;
-    private Integer applyStatus;
     private String applyNo;
     private String filePath;
     private String fileType;
     private Integer parseStatus;
     private String parseError;
-    private String unitName;
-    private String destinationName;
-    private String baseTheme;
-    private String unitType;
-    private String address;
-    private String contactPerson;
-    private String contactPhone;
-    private String contactEmail;
+    private Integer parseCount;
+    private Integer certStatus;
+    private String certNo;
+    private String certName;
+    private String certUrl;
+    private String downloadUrl;
+    private LocalDateTime finishTime;
 }
