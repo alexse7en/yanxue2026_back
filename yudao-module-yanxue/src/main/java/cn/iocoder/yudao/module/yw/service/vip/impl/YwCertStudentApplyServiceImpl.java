@@ -4,53 +4,55 @@ import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.yw.convert.vip.YwCertStudentApplyConvert;
-import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwCertStudentApplyDO;
-import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwCertStudentDO;
+import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwStudentApplyBatchDO;
+import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwStudentApplyDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
-import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwCertStudentApplyMapper;
-import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwCertStudentMapper;
+import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwStudentApplyBatchMapper;
+import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwStudentApplyMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.service.vip.YwCertStudentApplyService;
+import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyAuditPageReqVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyAuditReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyParseReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplySubmitReqVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwStudentApplyDetailSaveReqVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_AUDIT_STATUS_INVALID;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_NOT_EXISTS;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_PARSE_EMPTY;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_PARSE_FILE_TYPE_INVALID;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_PARSE_REQUIRED;
+import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_STATUS_NOT_PENDING;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_SUBMIT_STATUS_INVALID;
-import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_TEMPLATE_NOT_CONFIG;
-import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_TOKEN_NOT_ENOUGH;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_VIPINFO_NOT_EXISTS;
 
 @Service
 @Validated
 public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService {
 
+    private static final Integer APPLY_STATUS_DRAFT = 0;
+    private static final Integer APPLY_STATUS_PENDING = 1;
+    private static final Integer APPLY_STATUS_APPROVED = 2;
+    private static final Integer APPLY_STATUS_REJECTED = 3;
     private static final Integer PARSE_STATUS_SUCCESS = 1;
     private static final Integer PARSE_STATUS_FAIL = 2;
-    private static final Integer CERT_STATUS_PENDING = 0;
-    private static final Integer CERT_STATUS_GENERATING = 1;
-    private static final Integer CERT_STATUS_SUCCESS = 2;
-    private static final Integer CERT_STATUS_FAIL = 3;
-    private static final Integer DETAIL_STATUS_PENDING = 0;
 
     @Resource
-    private YwCertStudentApplyMapper certStudentApplyMapper;
+    private YwStudentApplyBatchMapper studentApplyBatchMapper;
     @Resource
-    private YwCertStudentMapper certStudentMapper;
+    private YwStudentApplyMapper studentApplyMapper;
     @Resource
     private YwVipInfoMapper vipInfoMapper;
     @Resource
@@ -60,12 +62,13 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
 
     @Override
     public PageResult<YwCertStudentApplyRespVO> getApplyPageMy(YwCertStudentApplyPageReqVO reqVO) {
-        return YwCertStudentApplyConvert.INSTANCE.convertPage(certStudentApplyMapper.selectPageMy(getLoginUserId(), reqVO));
+        PageResult<YwStudentApplyBatchDO> pageResult = studentApplyBatchMapper.selectPageMy(getLoginUserId(), reqVO);
+        return YwCertStudentApplyConvert.INSTANCE.convertPage(pageResult);
     }
 
     @Override
     public YwCertStudentApplyRespVO getApply(Long id) {
-        return YwCertStudentApplyConvert.INSTANCE.convert(requireOwnedApply(id));
+        return buildResp(requireOwnedBatch(id));
     }
 
     @Override
@@ -74,96 +77,158 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
         validateExcelFileType(reqVO.getFileType(), reqVO.getFilePath());
         Long userId = getLoginUserId();
         YwVipInfoDO vipInfo = requireVipInfo(userId);
-        List<YwCertStudentDO> details;
+        YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectLatestDraftByUserId(userId);
+        boolean isNewBatch = batch == null;
+        if (isNewBatch) {
+            batch = new YwStudentApplyBatchDO();
+            batch.setUserId(userId);
+            batch.setVipinfoId(vipInfo.getId());
+            batch.setApplyNo(buildApplyNo());
+            batch.setApplyStatus(APPLY_STATUS_DRAFT);
+        }
+        batch.setVipinfoId(vipInfo.getId());
+        batch.setUploadFilePath(reqVO.getFilePath());
+        batch.setFileType(resolveFileType(reqVO.getFileType(), reqVO.getFilePath()));
+        batch.setDownloadUrl(null);
+        batch.setAuditRemark(null);
+        batch.setAuditTime(null);
+        batch.setAuditorId(null);
 
-        YwCertStudentApplyDO apply = new YwCertStudentApplyDO();
-        apply.setUserId(userId);
-        apply.setVipinfoId(vipInfo.getId());
-        apply.setApplyNo(buildApplyNo());
-        apply.setFilePath(reqVO.getFilePath());
-        apply.setFileType(resolveFileType(reqVO.getFileType(), reqVO.getFilePath()));
-        apply.setCertStatus(CERT_STATUS_PENDING);
-        apply.setCertName("研学旅行实践活动证书");
-
+        List<YwStudentApplyDO> details;
         try {
             details = certStudentExcelParser.parse(reqVO.getFilePath());
             if (details.isEmpty()) {
                 throw exception(YW_CERT_STUDENT_APPLY_PARSE_EMPTY);
             }
         } catch (ServiceException ex) {
-            apply.setParseStatus(PARSE_STATUS_FAIL);
-            apply.setParseError(ex.getMessage());
-            apply.setParseCount(0);
-            certStudentApplyMapper.insert(apply);
-            return YwCertStudentApplyConvert.INSTANCE.convert(apply);
+            batch.setParseStatus(PARSE_STATUS_FAIL);
+            batch.setParseError(ex.getMessage());
+            batch.setParseCount(0);
+            saveParsedBatch(batch, isNewBatch);
+            if (!isNewBatch) {
+                studentApplyMapper.deleteByBatchId(batch.getId());
+            }
+            return buildResp(batch);
         } catch (Exception ex) {
-            apply.setParseStatus(PARSE_STATUS_FAIL);
-            apply.setParseError(limitMsg(ex.getMessage()));
-            apply.setParseCount(0);
-            certStudentApplyMapper.insert(apply);
-            return YwCertStudentApplyConvert.INSTANCE.convert(apply);
+            batch.setParseStatus(PARSE_STATUS_FAIL);
+            batch.setParseError(limitMsg(ex.getMessage()));
+            batch.setParseCount(0);
+            saveParsedBatch(batch, isNewBatch);
+            if (!isNewBatch) {
+                studentApplyMapper.deleteByBatchId(batch.getId());
+            }
+            return buildResp(batch);
         }
 
-        apply.setParseStatus(PARSE_STATUS_SUCCESS);
-        apply.setParseError(null);
-        apply.setParseCount(details.size());
-        certStudentApplyMapper.insert(apply);
+        batch.setParseStatus(PARSE_STATUS_SUCCESS);
+        batch.setParseError(null);
+        batch.setParseCount(details.size());
+        saveParsedBatch(batch, isNewBatch);
+        studentApplyMapper.deleteByBatchId(batch.getId());
 
-        certStudentMapper.deleteByUserAndFilePath(userId, reqVO.getFilePath());
-        for (YwCertStudentDO detail : details) {
+        for (YwStudentApplyDO detail : details) {
+            detail.setApplyBatchId(batch.getId());
             detail.setUserId(userId);
             detail.setVipinfoId(vipInfo.getId());
-            detail.setUploadFilePath(reqVO.getFilePath());
-            detail.setStatus(DETAIL_STATUS_PENDING);
-            certStudentMapper.insert(detail);
+            studentApplyMapper.insert(detail);
         }
-        return YwCertStudentApplyConvert.INSTANCE.convert(apply);
+        return buildResp(batch);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long submitApply(YwCertStudentApplySubmitReqVO reqVO) {
-        if (!certStudentGenerator.hasConfig()) {
-            throw exception(YW_CERT_STUDENT_APPLY_TEMPLATE_NOT_CONFIG);
-        }
-        Long userId = getLoginUserId();
-        YwCertStudentApplyDO apply = requireOwnedApply(reqVO.getId());
-        if (!Objects.equals(apply.getParseStatus(), PARSE_STATUS_SUCCESS)) {
+        YwStudentApplyBatchDO batch = requireOwnedBatch(reqVO.getId());
+        if (!Objects.equals(batch.getParseStatus(), PARSE_STATUS_SUCCESS)) {
             throw exception(YW_CERT_STUDENT_APPLY_PARSE_REQUIRED);
         }
-        if (Objects.equals(apply.getCertStatus(), CERT_STATUS_GENERATING) || Objects.equals(apply.getCertStatus(), CERT_STATUS_SUCCESS)) {
+        if (Objects.equals(batch.getApplyStatus(), APPLY_STATUS_PENDING)) {
             throw exception(YW_CERT_STUDENT_APPLY_SUBMIT_STATUS_INVALID);
         }
-
-        List<YwCertStudentDO> details = certStudentMapper.selectListByUserAndFilePath(userId, apply.getFilePath());
-        if (details.isEmpty()) {
-            throw exception(YW_CERT_STUDENT_APPLY_PARSE_EMPTY);
-        }
-        YwVipInfoDO vipInfo = requireVipInfo(userId);
-        BigDecimal needToken = BigDecimal.valueOf(details.size());
-        BigDecimal balance = vipInfo.getTokenBalance() == null ? BigDecimal.ZERO : vipInfo.getTokenBalance();
-        if (balance.compareTo(needToken) < 0) {
-            throw exception(YW_CERT_STUDENT_APPLY_TOKEN_NOT_ENOUGH);
-        }
-        vipInfo.setTokenBalance(balance.subtract(needToken));
-        vipInfoMapper.updateById(vipInfo);
-
-        apply.setCertStatus(CERT_STATUS_GENERATING);
-        apply.setParseError(null);
-        apply.setFinishTime(null);
-        apply.setCertUrl(null);
-        apply.setDownloadUrl(null);
-        certStudentApplyMapper.updateById(apply);
-        certStudentGenerator.generateAsync(apply.getId());
-        return apply.getId();
+        overwriteDetails(batch.getId(), batch.getUserId(), batch.getVipinfoId(), reqVO.getDetails());
+        batch.setApplyStatus(APPLY_STATUS_PENDING);
+        batch.setAuditRemark(null);
+        batch.setAuditTime(null);
+        batch.setAuditorId(null);
+        studentApplyBatchMapper.updateById(batch);
+        return batch.getId();
     }
 
-    private YwCertStudentApplyDO requireOwnedApply(Long id) {
-        YwCertStudentApplyDO apply = certStudentApplyMapper.selectById(id);
-        if (apply == null || !Objects.equals(apply.getUserId(), getLoginUserId())) {
+    @Override
+    public PageResult<YwCertStudentApplyRespVO> getApplyAuditPage(YwCertStudentApplyAuditPageReqVO reqVO) {
+        PageResult<YwStudentApplyBatchDO> pageResult = studentApplyBatchMapper.selectAuditPage(reqVO);
+        return YwCertStudentApplyConvert.INSTANCE.convertPage(pageResult);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditApply(YwCertStudentApplyAuditReqVO reqVO) {
+        YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectById(reqVO.getId());
+        if (batch == null) {
             throw exception(YW_CERT_STUDENT_APPLY_NOT_EXISTS);
         }
-        return apply;
+        if (!Objects.equals(batch.getApplyStatus(), APPLY_STATUS_PENDING)) {
+            throw exception(YW_CERT_STUDENT_APPLY_STATUS_NOT_PENDING);
+        }
+        if (!Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)
+                && !Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_REJECTED)) {
+            throw exception(YW_CERT_STUDENT_APPLY_AUDIT_STATUS_INVALID);
+        }
+        batch.setApplyStatus(reqVO.getApplyStatus());
+        batch.setAuditRemark(reqVO.getAuditRemark());
+        batch.setAuditTime(LocalDateTime.now());
+        batch.setAuditorId(SecurityFrameworkUtils.getLoginUserId());
+        studentApplyBatchMapper.updateById(batch);
+
+        if (Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)) {
+            certStudentGenerator.generate(batch.getId());
+        }
+    }
+
+    private void overwriteDetails(Long batchId, Long userId, Long vipinfoId, List<YwStudentApplyDetailSaveReqVO> details) {
+        if (details == null || details.isEmpty()) {
+            return;
+        }
+        studentApplyMapper.deleteByBatchId(batchId);
+        for (YwStudentApplyDetailSaveReqVO item : details) {
+            YwStudentApplyDO detail = new YwStudentApplyDO();
+            detail.setApplyBatchId(batchId);
+            detail.setUserId(userId);
+            detail.setVipinfoId(vipinfoId);
+            detail.setStudentName(item.getStudentName());
+            detail.setIdCard(item.getIdCard());
+            detail.setSchoolName(item.getSchoolName());
+            detail.setClassName(item.getClassName());
+            detail.setCourseName(item.getCourseName());
+            detail.setCourseHours(item.getCourseHours());
+            detail.setCourseProvider(item.getCourseProvider());
+            detail.setCertDate(item.getCertDate());
+            detail.setStampUnit(item.getStampUnit());
+            studentApplyMapper.insert(detail);
+        }
+    }
+
+    private void saveParsedBatch(YwStudentApplyBatchDO batch, boolean isNewBatch) {
+        if (isNewBatch) {
+            studentApplyBatchMapper.insert(batch);
+            return;
+        }
+        studentApplyBatchMapper.updateById(batch);
+    }
+
+    private YwStudentApplyBatchDO requireOwnedBatch(Long id) {
+        YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectById(id);
+        if (batch == null || !Objects.equals(batch.getUserId(), getLoginUserId())) {
+            throw exception(YW_CERT_STUDENT_APPLY_NOT_EXISTS);
+        }
+        return batch;
+    }
+
+    private YwCertStudentApplyRespVO buildResp(YwStudentApplyBatchDO batch) {
+        YwCertStudentApplyRespVO respVO = YwCertStudentApplyConvert.INSTANCE.convert(batch);
+        List<YwStudentApplyDO> details = studentApplyMapper.selectListByBatchId(batch.getId());
+        respVO.setDetails(YwCertStudentApplyConvert.INSTANCE.convertDetailList(details));
+        return respVO;
     }
 
     private YwVipInfoDO requireVipInfo(Long userId) {

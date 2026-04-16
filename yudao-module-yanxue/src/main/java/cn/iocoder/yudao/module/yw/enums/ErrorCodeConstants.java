@@ -72,4 +72,6 @@ public interface ErrorCodeConstants {
     ErrorCode YW_CERT_STUDENT_APPLY_PARSE_REQUIRED = new ErrorCode(102505, "请先完成 Excel 解析后再提交生成");
     ErrorCode YW_CERT_STUDENT_APPLY_TOKEN_NOT_ENOUGH = new ErrorCode(102506, "会员单位证书生成次数不足");
     ErrorCode YW_CERT_STUDENT_APPLY_TEMPLATE_NOT_CONFIG = new ErrorCode(102507, "证书底版或电子章图片未配置");
+    ErrorCode YW_CERT_STUDENT_APPLY_AUDIT_STATUS_INVALID = new ErrorCode(102508, "学生证书申请审核状态非法");
+    ErrorCode YW_CERT_STUDENT_APPLY_STATUS_NOT_PENDING = new ErrorCode(102509, "仅待审核的学生证书申请可审核");
 }

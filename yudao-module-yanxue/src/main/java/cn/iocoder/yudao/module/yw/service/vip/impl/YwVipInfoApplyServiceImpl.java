@@ -52,7 +52,12 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
     @Override
     public YwVipInfoRespVO getMyVipInfo() {
         YwVipInfoDO vipInfo = vipInfoMapper.selectByUserId(getLoginUserId());
-        return vipInfo == null ? null : YwVipInfoApplyConvert.INSTANCE.convertVipInfo(vipInfo);
+        if (vipInfo == null) {
+            return null;
+        }
+        YwVipInfoRespVO respVO = YwVipInfoApplyConvert.INSTANCE.convertVipInfo(vipInfo);
+        respVO.setTokenBalance(vipInfo.getTokenBalance());
+        return respVO;
     }
 
     @Override

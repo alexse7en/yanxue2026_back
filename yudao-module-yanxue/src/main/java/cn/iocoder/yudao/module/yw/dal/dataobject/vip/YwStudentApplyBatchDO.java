@@ -10,30 +10,33 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 /**
- * 学生证书生成申请 DO
- *
- * 对应建议新增主表 yw_yanxue_cert_student_apply
+ * 学生证书申请批次 DO
  */
-@TableName("yw_yanxue_cert_student_apply")
-@KeySequence("yw_yanxue_cert_student_apply_seq")
+@TableName("yw_yanxue_student_apply_batch")
+@KeySequence("yw_yanxue_student_apply_batch_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class YwCertStudentApplyDO extends TenantBaseDO {
+public class YwStudentApplyBatchDO extends TenantBaseDO {
 
     @TableId
     private Long id;
     private Long userId;
     private Long vipinfoId;
     private String applyNo;
-    private String filePath;
+    /**
+     * 申请状态：0-草稿 1-待审核 2-审核通过 3-审核拒绝
+     */
+    private Integer applyStatus;
+    private String uploadFilePath;
     private String fileType;
+    /**
+     * 解析状态：0-未解析 1-解析成功 2-解析失败
+     */
     private Integer parseStatus;
     private String parseError;
     private Integer parseCount;
-    private Integer certStatus;
-    private String certNo;
-    private String certName;
-    private String certUrl;
     private String downloadUrl;
-    private LocalDateTime finishTime;
+    private String auditRemark;
+    private LocalDateTime auditTime;
+    private Long auditorId;
 }

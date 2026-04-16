@@ -3,11 +3,14 @@ package cn.iocoder.yudao.module.yw.controller.admin.vip;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.yw.service.vip.YwCertStudentApplyService;
+import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyAuditPageReqVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyAuditReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyParseReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplySubmitReqVO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,8 +40,15 @@ public class YwCertStudentApplyController {
         return success(certStudentApplyService.getApplyPageMy(reqVO));
     }
 
+    @GetMapping("/page")
+    @Operation(summary = "管理员分页查询学生证书申请")
+    public CommonResult<PageResult<YwCertStudentApplyRespVO>> page(@Valid YwCertStudentApplyAuditPageReqVO reqVO) {
+        return success(certStudentApplyService.getApplyAuditPage(reqVO));
+    }
+
     @GetMapping("/get")
     @Operation(summary = "查询单条证书申请详情")
+    @Parameter(name = "id", description = "申请批次 ID", required = true)
     public CommonResult<YwCertStudentApplyRespVO> get(@RequestParam("id") Long id) {
         return success(certStudentApplyService.getApply(id));
     }
@@ -53,5 +63,12 @@ public class YwCertStudentApplyController {
     @Operation(summary = "提交学生证书生成申请")
     public CommonResult<Long> submit(@Valid @RequestBody YwCertStudentApplySubmitReqVO reqVO) {
         return success(certStudentApplyService.submitApply(reqVO));
+    }
+
+    @PostMapping("/audit")
+    @Operation(summary = "审核学生证书生成申请")
+    public CommonResult<Boolean> audit(@Valid @RequestBody YwCertStudentApplyAuditReqVO reqVO) {
+        certStudentApplyService.auditApply(reqVO);
+        return success(true);
     }
 }

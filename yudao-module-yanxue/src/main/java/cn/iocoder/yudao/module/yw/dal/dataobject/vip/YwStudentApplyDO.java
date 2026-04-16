@@ -1,6 +1,5 @@
 package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -11,23 +10,21 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDate;
 
 /**
- * 学生证书正式表 DO
+ * 学生证书申请明细 DO
  */
-@TableName("yw_yanxue_cert_student")
-@KeySequence("yw_yanxue_cert_student_seq")
+@TableName("yw_yanxue_student_apply")
+@KeySequence("yw_yanxue_student_apply_seq")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class YwCertStudentDO extends BaseDO {
+
+public class YwStudentApplyDO   {
 
     @TableId
     private Long id;
-    private Long applyDetailId;
+    private Long applyBatchId;
     private Long userId;
     private Long vipinfoId;
-    private Integer certYear;
     private String studentName;
     private String idCard;
-    private String certNo;
     private String schoolName;
     private String className;
     private String courseName;
@@ -35,6 +32,4 @@ public class YwCertStudentDO extends BaseDO {
     private String courseProvider;
     private LocalDate certDate;
     private String stampUnit;
-    private String certImageUrl;
-    private java.time.LocalDateTime issueTime;
 }

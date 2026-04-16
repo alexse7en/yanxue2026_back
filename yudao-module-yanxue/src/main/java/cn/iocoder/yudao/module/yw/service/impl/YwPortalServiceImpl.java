@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.yw.convert.portal.YwPortalConvert;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwOrgInfoDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwYanxueArticleDO;
+import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwCertStudentMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwOrgInfoMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwYanxueArticleMapper;
@@ -41,6 +42,8 @@ public class YwPortalServiceImpl implements YwPortalService {
     private YwVipInfoMapper ywVipInfoMapper;
     @Resource
     private YwOrgInfoMapper ywOrgInfoMapper;
+    @Resource
+    private YwCertStudentMapper ywCertStudentMapper;
     @Resource
     private YwAuthLevelMapper ywAuthLevelMapper;
 
@@ -100,7 +103,7 @@ public class YwPortalServiceImpl implements YwPortalService {
     @Override
     public PageResult<YwPortalCertRespVO> queryStudentCert(YwPortalCertQueryReqVO reqVO) {
         validateCertQueryCondition(reqVO);
-        List<YwPortalCertRespVO> list = ywAuthLevelMapper.selectPortalStudentCertList(reqVO);
+        List<YwPortalCertRespVO> list = ywCertStudentMapper.selectPortalStudentCertList(reqVO);
         return new PageResult<>(list, (long) list.size());
     }
 
