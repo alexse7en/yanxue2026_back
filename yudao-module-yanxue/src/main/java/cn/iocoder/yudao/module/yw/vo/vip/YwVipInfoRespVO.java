@@ -30,6 +30,9 @@ public class YwVipInfoRespVO {
     private String repPosition;
     private String repPhone;
     private String repEmail;
+    private BigDecimal longitude;
+    private BigDecimal latitude;
+    private String mapAddress;
     private LocalDate membershipStartDate;
     private LocalDate membershipEndDate;
     private Integer status;

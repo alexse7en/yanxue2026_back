@@ -69,7 +69,11 @@ public class YwPortalServiceImpl implements YwPortalService {
     public PageResult<YwPortalVipInfoRespVO> getPortalVipInfoPage(YwPortalVipInfoPageReqVO reqVO) {
         reqVO.setStatus(PUBLISHED_STATUS);
         PageResult<YwVipInfoDO> pageResult = ywVipInfoMapper.selectPortalPage(reqVO);
-        return new PageResult<>(YwPortalConvert.INSTANCE.convertVipList(pageResult.getList()), pageResult.getTotal());
+        List<YwPortalVipInfoRespVO> list = YwPortalConvert.INSTANCE.convertVipList(pageResult.getList());
+        for (int i = 0; i < list.size() && i < pageResult.getList().size(); i++) {
+            fillVipMapFields(list.get(i), pageResult.getList().get(i));
+        }
+        return new PageResult<>(list, pageResult.getTotal());
     }
 
     @Override
@@ -79,7 +83,9 @@ public class YwPortalServiceImpl implements YwPortalService {
         if (vipInfo == null || !PUBLISHED_STATUS.equals(vipInfo.getStatus())) {
             return null;
         }
-        return YwPortalConvert.INSTANCE.convertVip(vipInfo);
+        YwPortalVipInfoRespVO respVO = YwPortalConvert.INSTANCE.convertVip(vipInfo);
+        fillVipMapFields(respVO, vipInfo);
+        return respVO;
     }
 
     @Override
@@ -120,5 +126,11 @@ public class YwPortalServiceImpl implements YwPortalService {
         if (!hasCertNo && !hasNameAndSuffix) {
             throw exception(YW_PORTAL_CERT_QUERY_CONDITION_REQUIRED);
         }
+    }
+
+    private void fillVipMapFields(YwPortalVipInfoRespVO respVO, YwVipInfoDO vipInfo) {
+        respVO.setLongitude(vipInfo.getLongitude());
+        respVO.setLatitude(vipInfo.getLatitude());
+        respVO.setMapAddress(StringUtils.hasText(vipInfo.getMapAddress()) ? vipInfo.getMapAddress() : vipInfo.getCompanyAddress());
     }
 }

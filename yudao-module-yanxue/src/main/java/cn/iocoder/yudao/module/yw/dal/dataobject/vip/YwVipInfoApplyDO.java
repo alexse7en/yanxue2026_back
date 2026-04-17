@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @TableName("yw_yanxue_vipinfo_apply")
@@ -32,6 +33,9 @@ public class YwVipInfoApplyDO {
     private String repPosition;
     private String repPhone;
     private String repEmail;
+    private BigDecimal longitude;
+    private BigDecimal latitude;
+    private String mapAddress;
     private Integer applyStatus;
     private String auditRemark;
     private LocalDateTime auditTime;

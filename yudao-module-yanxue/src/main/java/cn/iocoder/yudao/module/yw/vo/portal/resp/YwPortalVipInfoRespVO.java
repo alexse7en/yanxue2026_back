@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.yw.vo.portal.resp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Schema(description = "用户 APP - 首页会员中心 Response VO")
@@ -20,11 +21,15 @@ public class YwPortalVipInfoRespVO {
     private String memberLevel;
     private String contactName;
     private String contactPhone;
+    private BigDecimal longitude;
+    private BigDecimal latitude;
+    private String mapAddress;
     private LocalDate effectiveStartDate;
     private LocalDate effectiveEndDate;
     private Integer status;
     private String businessScope;
     private String unitType;
+
 
     @Schema(description = "星级，待数据库真实列确认")
     private Integer star;

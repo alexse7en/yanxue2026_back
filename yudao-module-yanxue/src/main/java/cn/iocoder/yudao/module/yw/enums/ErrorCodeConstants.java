@@ -55,6 +55,8 @@ public interface ErrorCodeConstants {
     ErrorCode YW_VIPINFO_APPLY_STATUS_NOT_PENDING = new ErrorCode(102304, "仅待审核的展示信息申请可审核");
     ErrorCode YW_VIPINFO_APPLY_AUDIT_STATUS_INVALID = new ErrorCode(102305, "会员展示信息申请审核状态非法");
     ErrorCode YW_VIPINFO_APPLY_QUERY_PARAM_REQUIRED = new ErrorCode(102306, "查询会员展示信息申请时必须提供 id 或 userId");
+    ErrorCode YW_VIPINFO_MAP_KEY_NOT_CONFIG = new ErrorCode(102307, "未配置高德地图 Key，无法自动解析经纬度");
+    ErrorCode YW_VIPINFO_MAP_GEOCODE_FAILED = new ErrorCode(102308, "地图地址解析失败，请检查地址或手工填写经纬度");
     ErrorCode YW_ORG_APPLY_NOT_EXISTS = new ErrorCode(102401, "机构认证申请不存在");
     ErrorCode YW_ORG_APPLY_DUPLICATE_PENDING = new ErrorCode(102402, "当前机构类型存在待审核申请，暂不可重复提交");
     ErrorCode YW_ORG_APPLY_STATUS_NOT_SUBMITTED = new ErrorCode(102403, "仅已提交待审核的机构认证申请可审核");

@@ -37,6 +37,9 @@ public class YwVipInfoDO  {
     private String repPosition;
     private String repPhone;
     private String repEmail;
+    private BigDecimal longitude;
+    private BigDecimal latitude;
+    private String mapAddress;
     private LocalDate membershipStartDate;
     private LocalDate membershipEndDate;
     private BigDecimal tokenBalance;

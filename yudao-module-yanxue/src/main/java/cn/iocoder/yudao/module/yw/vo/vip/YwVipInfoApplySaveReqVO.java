@@ -24,6 +24,9 @@ public class YwVipInfoApplySaveReqVO {
     private String repPosition;
     private String repPhone;
     private String repEmail;
+    private BigDecimal longitude;
+    private BigDecimal latitude;
+    private String mapAddress;
     private String gallery;
 
 }
