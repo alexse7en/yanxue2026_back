@@ -3,7 +3,6 @@ package cn.iocoder.yudao.module.yw.vo.vip;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -31,9 +30,6 @@ public class YwVipInfoApplyRespVO {
     private String repPosition;
     private String repPhone;
     private String repEmail;
-    private BigDecimal longitude;
-    private BigDecimal latitude;
-    private String mapAddress;
     private Integer star;
     private String honor;
     private Integer applyStatus;

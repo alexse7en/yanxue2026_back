@@ -1,13 +1,10 @@
 package cn.iocoder.yudao.module.yw.dal.dataobject.vip;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @TableName("yw_yanxue_vipinfo")
@@ -37,12 +34,9 @@ public class YwVipInfoDO  {
     private String repPosition;
     private String repPhone;
     private String repEmail;
-    private BigDecimal longitude;
-    private BigDecimal latitude;
-    private String mapAddress;
     private LocalDate membershipStartDate;
     private LocalDate membershipEndDate;
-    private BigDecimal tokenBalance;
+    private java.math.BigDecimal tokenBalance;
     private Integer status;
     private String honor;
     private Integer star;

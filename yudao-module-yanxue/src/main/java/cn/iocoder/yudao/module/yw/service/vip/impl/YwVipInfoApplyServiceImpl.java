@@ -10,7 +10,6 @@ import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoApplyMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.service.vip.YwVipInfoApplyService;
-import cn.iocoder.yudao.module.yw.service.vip.client.YwAmapGeoClient;
 import cn.iocoder.yudao.module.yw.vo.vip.YwVipInfoApplyAuditReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwVipInfoApplyPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwVipInfoApplyRespVO;
@@ -49,8 +48,6 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
     private YwVipInfoMapper vipInfoMapper;
     @Resource
     private YwVipInfoApplyMapper vipInfoApplyMapper;
-    @Resource
-    private YwAmapGeoClient amapGeoClient;
 
     @Override
     public YwVipInfoRespVO getMyVipInfo() {
@@ -60,9 +57,6 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
         }
         YwVipInfoRespVO respVO = YwVipInfoApplyConvert.INSTANCE.convertVipInfo(vipInfo);
         respVO.setTokenBalance(vipInfo.getTokenBalance());
-        respVO.setLongitude(vipInfo.getLongitude());
-        respVO.setLatitude(vipInfo.getLatitude());
-        respVO.setMapAddress(StringUtils.hasText(vipInfo.getMapAddress()) ? vipInfo.getMapAddress() : vipInfo.getCompanyAddress());
         return respVO;
     }
 
@@ -238,15 +232,6 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
             if (!StringUtils.hasText(respVO.getRepEmail())) {
                 respVO.setRepEmail(vipInfo.getRepEmail());
             }
-            if (respVO.getLongitude() == null) {
-                respVO.setLongitude(vipInfo.getLongitude());
-            }
-            if (respVO.getLatitude() == null) {
-                respVO.setLatitude(vipInfo.getLatitude());
-            }
-            if (!StringUtils.hasText(respVO.getMapAddress())) {
-                respVO.setMapAddress(StringUtils.hasText(vipInfo.getMapAddress()) ? vipInfo.getMapAddress() : vipInfo.getCompanyAddress());
-            }
             if (!StringUtils.hasText(respVO.getGallery())) {
                 respVO.setGallery(vipInfo.getGallery());
             }
@@ -281,9 +266,6 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
         target.setRepPosition(vipInfo.getRepPosition());
         target.setRepPhone(vipInfo.getRepPhone());
         target.setRepEmail(vipInfo.getRepEmail());
-        target.setLongitude(vipInfo.getLongitude());
-        target.setLatitude(vipInfo.getLatitude());
-        target.setMapAddress(vipInfo.getMapAddress());
         target.setGallery(normalizeGallery(vipInfo.getGallery()));
     }
 
@@ -333,19 +315,9 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
         if (reqVO.getRepEmail() != null) {
             target.setRepEmail(reqVO.getRepEmail());
         }
-        if (reqVO.getLongitude() != null) {
-            target.setLongitude(reqVO.getLongitude());
-        }
-        if (reqVO.getLatitude() != null) {
-            target.setLatitude(reqVO.getLatitude());
-        }
-        if (reqVO.getMapAddress() != null) {
-            target.setMapAddress(reqVO.getMapAddress());
-        }
         if (reqVO.getGallery() != null) {
             target.setGallery(normalizeGallery(reqVO.getGallery()));
         }
-        autoFillCoordinates(target, reqVO);
     }
 
     private void mergeApplyToVipInfo(YwVipInfoDO vipInfo, YwVipInfoApplyDO apply) {
@@ -394,39 +366,9 @@ public class YwVipInfoApplyServiceImpl implements YwVipInfoApplyService {
         if (apply.getRepEmail() != null) {
             vipInfo.setRepEmail(apply.getRepEmail());
         }
-        if (apply.getLongitude() != null) {
-            vipInfo.setLongitude(apply.getLongitude());
-        }
-        if (apply.getLatitude() != null) {
-            vipInfo.setLatitude(apply.getLatitude());
-        }
-        if (apply.getMapAddress() != null) {
-            vipInfo.setMapAddress(apply.getMapAddress());
-        }
         if (apply.getGallery() != null) {
             vipInfo.setGallery(normalizeGallery(apply.getGallery()));
         }
-    }
-
-    private void autoFillCoordinates(YwVipInfoApplyDO target, YwVipInfoApplySaveReqVO reqVO) {
-        if (reqVO.getLongitude() != null || reqVO.getLatitude() != null) {
-            return;
-        }
-        if (reqVO.getMapAddress() == null && reqVO.getCompanyAddress() == null) {
-            return;
-        }
-        String address = StringUtils.hasText(target.getMapAddress()) ? target.getMapAddress() : target.getCompanyAddress();
-        if (!StringUtils.hasText(address)) {
-            target.setLongitude(null);
-            target.setLatitude(null);
-            return;
-        }
-        if (!StringUtils.hasText(target.getMapAddress())) {
-            target.setMapAddress(address);
-        }
-        YwAmapGeoClient.GeoPoint geoPoint = amapGeoClient.geocode(address);
-        target.setLongitude(geoPoint.getLongitude());
-        target.setLatitude(geoPoint.getLatitude());
     }
 
     private String normalizeGallery(String gallery) {

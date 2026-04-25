@@ -2,7 +2,6 @@ package cn.iocoder.yudao.module.yw.vo.vip;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -24,9 +23,6 @@ public class YwVipInfoApplySaveReqVO {
     private String repPosition;
     private String repPhone;
     private String repEmail;
-    private BigDecimal longitude;
-    private BigDecimal latitude;
-    private String mapAddress;
     private String gallery;
 
 }
