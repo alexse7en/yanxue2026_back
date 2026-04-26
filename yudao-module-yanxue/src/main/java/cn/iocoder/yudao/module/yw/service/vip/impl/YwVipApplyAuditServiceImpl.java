@@ -2,12 +2,14 @@ package cn.iocoder.yudao.module.yw.service.vip.impl;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.yw.convert.vip.YwVipApplyConvert;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipApplyDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipApplyMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.service.vip.YwVipApplyAuditService;
+import cn.iocoder.yudao.module.yw.service.vip.YwVipTokenService;
 import cn.iocoder.yudao.module.yw.vo.vip.YwVipApplyAuditPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwVipApplyAuditReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwVipApplyAuditRespVO;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -37,6 +40,7 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
     private static final Integer APPLY_STATUS_APPROVED = 10;
     private static final Integer APPLY_STATUS_REJECTED = 11;
     private static final Integer VIP_STATUS_ENABLED = 1;
+    private static final String VIP_USER_ROLE_CODE = "4";
     private static final Pattern MEMBER_NO_PATTERN = Pattern.compile("^GDSTA-\\d{4}[FCLP]\\d{3}$");
     private static final Pattern MEMBER_NO_SUFFIX_PATTERN = Pattern.compile("^\\d{3}$");
 
@@ -44,6 +48,10 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
     private YwVipApplyMapper vipApplyMapper;
     @Resource
     private YwVipInfoMapper vipInfoMapper;
+    @Resource
+    private PermissionApi permissionApi;
+    @Resource
+    private YwVipTokenService vipTokenService;
 
     @Override
     public PageResult<YwVipApplyAuditRespVO> getVipApplyPage(YwVipApplyAuditPageReqVO reqVO) {
@@ -78,6 +86,7 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
             validateMemberNo(reqVO);
             validateMemberNoDuplicate(apply.getUserId(), reqVO.getMemberNo());
             upsertVipInfo(apply, reqVO.getMemberNo());
+            permissionApi.appendUserRoleByCode(apply.getUserId(), Collections.singleton(VIP_USER_ROLE_CODE));
             apply.setMemberNo(reqVO.getMemberNo());
         }
 
@@ -131,6 +140,7 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
         vipInfo.setRepPosition(apply.getRepPosition());
         vipInfo.setRepPhone(apply.getRepPhone());
         vipInfo.setRepEmail(apply.getRepEmail());
+        vipTokenService.initializeApprovedTokenBalance(vipInfo);
         vipInfo.setStatus(VIP_STATUS_ENABLED);
         if (vipInfo.getId() == null) {
             vipInfoMapper.insert(vipInfo);

@@ -34,35 +34,35 @@ public class YwOrgApplyController {
 
     @GetMapping("/get-my")
     @Operation(summary = "查询我的某类申请")
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:query')")
+
     public CommonResult<YwOrgApplyRespVO> getMy(@RequestParam("applyType") String applyType) {
         return success(orgApplyAuditService.getMyOrgApply(applyType));
     }
 
     @PostMapping("/save-draft")
     @Operation(summary = "保存草稿")
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:save-draft')")
+
     public CommonResult<Long> saveDraft(@RequestBody YwOrgApplySaveReqVO reqVO) {
         return success(orgApplyAuditService.saveOrgApplyDraft(reqVO));
     }
 
     @PostMapping("/submit")
     @Operation(summary = "提交申请")
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:submit')")
+
     public CommonResult<Boolean> submit(@RequestBody YwOrgApplySaveReqVO reqVO) {
         return success(orgApplyAuditService.submitOrgApply(reqVO));
     }
 
     @PostMapping("/parse")
     @Operation(summary = "解析上传文件")
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:parse')")
+
     public CommonResult<YwOrgApplyRespVO> parse(@Valid @RequestBody YwOrgApplyParseReqVO reqVO) {
         return success(orgApplyAuditService.parseOrgApply(reqVO));
     }
 
     @GetMapping("/page")
     @Operation(summary = "管理员分页查询机构认证申请")
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:query')")
+
     public CommonResult<PageResult<YwOrgApplyRespVO>> getPage(@Valid YwOrgApplyAuditPageReqVO pageReqVO) {
         return success(orgApplyAuditService.getOrgApplyPage(pageReqVO));
     }
@@ -70,14 +70,14 @@ public class YwOrgApplyController {
     @GetMapping("/get")
     @Operation(summary = "查询机构认证申请详情")
     @Parameter(name = "id", description = "申请 ID", required = true)
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:query')")
+
     public CommonResult<YwOrgApplyRespVO> get(@RequestParam("id") Long id) {
         return success(orgApplyAuditService.getOrgApply(id));
     }
 
     @PostMapping("/audit")
     @Operation(summary = "审核机构认证申请")
-    @PreAuthorize("@ss.hasPermission('yw:yw-org-apply:audit')")
+
     public CommonResult<Boolean> audit(@Valid @RequestBody YwOrgApplyAuditReqVO reqVO) {
         orgApplyAuditService.auditOrgApply(reqVO);
         return success(true);

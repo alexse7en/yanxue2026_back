@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwStudentApplyBatchMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwStudentApplyMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.service.vip.YwCertStudentApplyService;
+import cn.iocoder.yudao.module.yw.service.vip.YwVipTokenService;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyAuditPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyAuditReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyPageReqVO;
@@ -59,6 +60,8 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
     private YwCertStudentExcelParser certStudentExcelParser;
     @Resource
     private YwCertStudentGenerator certStudentGenerator;
+    @Resource
+    private YwVipTokenService vipTokenService;
 
     @Override
     public PageResult<YwCertStudentApplyRespVO> getApplyPageMy(YwCertStudentApplyPageReqVO reqVO) {
@@ -146,6 +149,7 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
             throw exception(YW_CERT_STUDENT_APPLY_SUBMIT_STATUS_INVALID);
         }
         overwriteDetails(batch.getId(), batch.getUserId(), batch.getVipinfoId(), reqVO.getDetails());
+        validateTokenBalance(batch);
         batch.setApplyStatus(APPLY_STATUS_PENDING);
         batch.setAuditRemark(null);
         batch.setAuditTime(null);
@@ -173,6 +177,9 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
         if (!Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)
                 && !Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_REJECTED)) {
             throw exception(YW_CERT_STUDENT_APPLY_AUDIT_STATUS_INVALID);
+        }
+        if (Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)) {
+            validateTokenBalance(batch);
         }
         batch.setApplyStatus(reqVO.getApplyStatus());
         batch.setAuditRemark(reqVO.getAuditRemark());
@@ -237,6 +244,15 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
             throw exception(YW_VIPINFO_NOT_EXISTS);
         }
         return vipInfo;
+    }
+
+    private void validateTokenBalance(YwStudentApplyBatchDO batch) {
+        YwVipInfoDO vipInfo = vipInfoMapper.selectById(batch.getVipinfoId());
+        if (vipInfo == null) {
+            throw exception(YW_VIPINFO_NOT_EXISTS);
+        }
+        int detailCount = studentApplyMapper.selectListByBatchId(batch.getId()).size();
+        vipTokenService.validateGenerateToken(vipInfo, detailCount);
     }
 
     private void validateExcelFileType(String fileType, String filePath) {

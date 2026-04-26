@@ -36,4 +36,11 @@ public interface YwVipInfoMapper extends BaseMapperX<YwVipInfoDO> {
                         .or().like(YwVipInfoDO::getCompanyAddress, reqVO.getKeyword()));
         return selectPage(reqVO, queryWrapper);
     }
+
+    default java.util.List<YwVipInfoDO> selectEnabledForAnnualRefresh() {
+        return selectList(new LambdaQueryWrapperX<YwVipInfoDO>()
+                .eq(YwVipInfoDO::getStatus, 1)
+                .isNotNull(YwVipInfoDO::getMemberLevel)
+                .orderByAsc(YwVipInfoDO::getId));
+    }
 }

@@ -37,6 +37,7 @@ public class YwVipInfoDO  {
     private LocalDate membershipStartDate;
     private LocalDate membershipEndDate;
     private java.math.BigDecimal tokenBalance;
+    private Integer lastTokenRefreshYear;
     private Integer status;
     private String honor;
     private Integer star;

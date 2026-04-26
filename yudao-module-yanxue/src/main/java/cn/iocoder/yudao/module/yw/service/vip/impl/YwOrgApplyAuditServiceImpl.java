@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.yw.convert.vip.YwOrgApplyConvert;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwOrgApplyDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwOrgInfoDO;
@@ -24,6 +25,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -42,6 +44,7 @@ public class YwOrgApplyAuditServiceImpl implements YwOrgApplyAuditService {
     private static final Integer APPLY_STATUS_SUBMITTED = 1;
     private static final Integer APPLY_STATUS_APPROVED = 2;
     private static final Integer APPLY_STATUS_REJECTED = 3;
+    private static final String SECOND_ORG_ROLE_CODE = "6";
 
     @Resource
     private YwOrgApplyMapper orgApplyMapper;
@@ -51,6 +54,8 @@ public class YwOrgApplyAuditServiceImpl implements YwOrgApplyAuditService {
     private YwVipInfoMapper vipInfoMapper;
     @Resource
     private YwOrgApplyFileParser orgApplyFileParser;
+    @Resource
+    private PermissionApi permissionApi;
 
     @Override
     public YwOrgApplyRespVO getMyOrgApply(String applyType) {
@@ -143,6 +148,7 @@ public class YwOrgApplyAuditServiceImpl implements YwOrgApplyAuditService {
 
         if (Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)) {
             upsertOrgInfo(apply);
+            permissionApi.appendUserRoleByCode(apply.getUserId(), Collections.singleton(SECOND_ORG_ROLE_CODE));
         }
     }
 

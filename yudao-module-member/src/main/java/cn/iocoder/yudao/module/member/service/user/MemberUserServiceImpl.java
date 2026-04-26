@@ -18,6 +18,7 @@ import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
 import cn.iocoder.yudao.module.member.mq.producer.user.MemberUserProducer;
 import cn.iocoder.yudao.module.member.utils.TencentFaceIdUtil;
+import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.api.sms.SmsCodeApi;
 import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeUseReqDTO;
 import cn.iocoder.yudao.module.system.api.social.SocialClientApi;
@@ -37,6 +38,7 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -53,6 +55,8 @@ import static cn.iocoder.yudao.module.member.enums.ErrorCodeConstants.*;
 @Slf4j
 public class MemberUserServiceImpl implements MemberUserService {
 
+    private static final String REGISTER_USER_ROLE_CODE = "3";
+
     @Resource
     private MemberUserMapper memberUserMapper;
 
@@ -67,6 +71,8 @@ public class MemberUserServiceImpl implements MemberUserService {
 
     @Resource
     private MemberUserProducer memberUserProducer;
+    @Resource
+    private PermissionApi permissionApi;
 
     @Override
     public MemberUserDO getUserByMobile(String mobile) {
@@ -112,6 +118,7 @@ public class MemberUserServiceImpl implements MemberUserService {
             user.setNickname("用户" + RandomUtil.randomNumbers(6));
         }
         memberUserMapper.insert(user);
+        permissionApi.appendUserRoleByCode(user.getId(), Collections.singleton(REGISTER_USER_ROLE_CODE));
 
         // 发送 MQ 消息：用户创建
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
