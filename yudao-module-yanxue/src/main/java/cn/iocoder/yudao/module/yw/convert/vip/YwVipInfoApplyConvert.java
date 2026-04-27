@@ -17,11 +17,17 @@ public interface YwVipInfoApplyConvert {
 
     YwVipInfoRespVO convertVipInfo(YwVipInfoDO bean);
 
+    List<YwVipInfoRespVO> convertVipInfoList(List<YwVipInfoDO> list);
+
     YwVipInfoApplyRespVO convertApply(YwVipInfoApplyDO bean);
 
     List<YwVipInfoApplyRespVO> convertApplyList(List<YwVipInfoApplyDO> list);
 
     default PageResult<YwVipInfoApplyRespVO> convertApplyPage(PageResult<YwVipInfoApplyDO> pageResult) {
         return new PageResult<>(convertApplyList(pageResult.getList()), pageResult.getTotal());
+    }
+
+    default PageResult<YwVipInfoRespVO> convertVipInfoPage(PageResult<YwVipInfoDO> pageResult) {
+        return new PageResult<>(convertVipInfoList(pageResult.getList()), pageResult.getTotal());
     }
 }

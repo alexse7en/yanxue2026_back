@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.vo.portal.page.YwPortalVipInfoPageReqVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwVipInfoPageReqVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.util.StringUtils;
 
@@ -35,6 +36,18 @@ public interface YwVipInfoMapper extends BaseMapperX<YwVipInfoDO> {
                 wrapper -> wrapper.like(YwVipInfoDO::getCompanyName, reqVO.getKeyword())
                         .or().like(YwVipInfoDO::getCompanyAddress, reqVO.getKeyword()));
         return selectPage(reqVO, queryWrapper);
+    }
+
+    default PageResult<YwVipInfoDO> selectPage(YwVipInfoPageReqVO reqVO) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<YwVipInfoDO>()
+                .eqIfPresent(YwVipInfoDO::getMemberLevel, reqVO.getMemberLevel())
+                .likeIfPresent(YwVipInfoDO::getCompanyName, reqVO.getCompanyName())
+                .eqIfPresent(YwVipInfoDO::getMemberNo, reqVO.getMemberNo())
+                .betweenIfPresent(YwVipInfoDO::getMembershipStartDate,
+                        reqVO.getBeginMembershipStartDate(), reqVO.getEndMembershipStartDate())
+                .betweenIfPresent(YwVipInfoDO::getMembershipEndDate,
+                        reqVO.getBeginMembershipEndDate(), reqVO.getEndMembershipEndDate())
+                .orderByDesc(YwVipInfoDO::getId));
     }
 
     default java.util.List<YwVipInfoDO> selectEnabledForAnnualRefresh() {
