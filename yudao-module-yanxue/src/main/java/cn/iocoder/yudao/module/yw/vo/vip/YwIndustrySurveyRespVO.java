@@ -56,4 +56,6 @@ public class YwIndustrySurveyRespVO {
     private String annualVisitorsRange;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private String userName;
+    private String vipinfoName;
 }

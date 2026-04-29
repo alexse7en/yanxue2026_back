@@ -1,15 +1,13 @@
 package cn.iocoder.yudao.module.yw.vo.vip;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Schema(description = "管理后台 - 二级认证展示资料 Response VO")
 @Data
-public class YwOrgInfoRespVO {
+public class YwOrgInfoSaveReqVO {
 
     private Long id;
     private Long userId;
@@ -61,6 +59,4 @@ public class YwOrgInfoRespVO {
     private LocalDateTime certTime;
     private LocalDate expireTime;
     private String unitProfile;
-    private String userName;
-    private String vipinfoName;
 }

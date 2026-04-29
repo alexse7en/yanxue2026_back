@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.yw.service.vip.impl;
 
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.yw.convert.vip.YwIndustrySurveyConvert;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwIndustrySurveyDO;
@@ -8,6 +9,7 @@ import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwIndustrySurveyMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.service.vip.YwIndustrySurveyService;
+import cn.iocoder.yudao.module.yw.vo.vip.YwIndustrySurveyPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwIndustrySurveyRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwIndustrySurveySaveReqVO;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,20 @@ public class YwIndustrySurveyServiceImpl implements YwIndustrySurveyService {
     private YwIndustrySurveyMapper industrySurveyMapper;
     @Resource
     private YwVipInfoMapper vipInfoMapper;
+
+    @Override
+    public PageResult<YwIndustrySurveyRespVO> getIndustrySurveyPage(YwIndustrySurveyPageReqVO pageReqVO) {
+        return industrySurveyMapper.selectDataCenterPage(pageReqVO);
+    }
+
+    @Override
+    public YwIndustrySurveyRespVO getIndustrySurvey(Long id) {
+        YwIndustrySurveyRespVO survey = industrySurveyMapper.selectDataCenterById(id);
+        if (survey == null) {
+            throw exception(YW_INDUSTRY_SURVEY_NOT_EXISTS);
+        }
+        return survey;
+    }
 
     @Override
     public YwIndustrySurveyRespVO getMyIndustrySurvey(String surveyType) {
@@ -83,8 +99,12 @@ public class YwIndustrySurveyServiceImpl implements YwIndustrySurveyService {
     public void updateIndustrySurvey(YwIndustrySurveySaveReqVO reqVO) {
         Long userId = getLoginUserId();
         YwIndustrySurveyDO target = reqVO.getId() != null ? industrySurveyMapper.selectById(reqVO.getId()) : null;
-        if (target == null || !Objects.equals(target.getUserId(), userId)) {
+        if (target == null) {
             throw exception(YW_INDUSTRY_SURVEY_NOT_EXISTS);
+        }
+        if (!Objects.equals(target.getUserId(), userId)) {
+            updateIndustrySurveyForDataCenter(reqVO);
+            return;
         }
         if (Objects.equals(target.getStatus(), STATUS_SUBMITTED)) {
             throw exception(YW_INDUSTRY_SURVEY_STATUS_SUBMITTED);
@@ -102,6 +122,20 @@ public class YwIndustrySurveyServiceImpl implements YwIndustrySurveyService {
         if (target.getStatus() == null) {
             target.setStatus(STATUS_DRAFT);
         }
+        industrySurveyMapper.updateById(target);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateIndustrySurveyForDataCenter(YwIndustrySurveySaveReqVO reqVO) {
+        YwIndustrySurveyDO target = industrySurveyMapper.selectById(reqVO.getId());
+        if (target == null) {
+            throw exception(YW_INDUSTRY_SURVEY_NOT_EXISTS);
+        }
+        String surveyType = StringUtils.hasText(reqVO.getSurveyType()) ? reqVO.getSurveyType() : target.getSurveyType();
+        validateSurveyType(surveyType);
+        overwriteEditableFields(target, reqVO);
+        target.setSurveyType(surveyType);
         industrySurveyMapper.updateById(target);
     }
 
@@ -261,6 +295,52 @@ public class YwIndustrySurveyServiceImpl implements YwIndustrySurveyService {
         if (!STATUS_DRAFT.equals(status) && !STATUS_SUBMITTED.equals(status)) {
             throw exception(YW_INDUSTRY_SURVEY_STATUS_INVALID);
         }
+    }
+
+    private void overwriteEditableFields(YwIndustrySurveyDO target, YwIndustrySurveySaveReqVO reqVO) {
+        if (reqVO.getStatus() != null) {
+            validateStatus(reqVO.getStatus());
+            target.setStatus(reqVO.getStatus());
+        }
+        target.setCompanyName(reqVO.getCompanyName());
+        target.setAddress(reqVO.getAddress());
+        target.setContactPerson(reqVO.getContactPerson());
+        target.setContactPhone(reqVO.getContactPhone());
+        target.setUnitTypeChoice(reqVO.getUnitTypeChoice());
+        target.setUnitTypeOther(reqVO.getUnitTypeOther());
+        target.setEmployeeScale(reqVO.getEmployeeScale());
+        target.setEnterpriseType(reqVO.getEnterpriseType());
+        target.setOperationYears(reqVO.getOperationYears());
+        target.setCustomerGroup(reqVO.getCustomerGroup());
+        target.setAnnualRevenueRange(reqVO.getAnnualRevenueRange());
+        target.setProfitMarginRange(reqVO.getProfitMarginRange());
+        target.setCourseDevelopment(reqVO.getCourseDevelopment());
+        target.setCourseCount(reqVO.getCourseCount());
+        target.setHasFulltimeTutor(reqVO.getHasFulltimeTutor());
+        target.setFulltimeTutorCount(reqVO.getFulltimeTutorCount());
+        target.setHasParttimeTutor(reqVO.getHasParttimeTutor());
+        target.setNoTutor(reqVO.getNoTutor());
+        target.setPromotionChannels(reqVO.getPromotionChannels());
+        target.setPromotionChannelsOther(reqVO.getPromotionChannelsOther());
+        target.setChallenges(reqVO.getChallenges());
+        target.setChallengesOther(reqVO.getChallengesOther());
+        target.setConfidenceLevel(reqVO.getConfidenceLevel());
+        target.setSuggestions(reqVO.getSuggestions());
+        target.setDestinationName(reqVO.getDestinationName());
+        target.setBaseType(reqVO.getBaseType());
+        target.setBaseTypeOther(reqVO.getBaseTypeOther());
+        target.setBaseTheme(reqVO.getBaseTheme());
+        target.setAreaLand(reqVO.getAreaLand());
+        target.setAreaBuilding(reqVO.getAreaBuilding());
+        target.setAreaAvailable(reqVO.getAreaAvailable());
+        target.setMaxStudentsPerTime(reqVO.getMaxStudentsPerTime());
+        target.setHasAccommodation(reqVO.getHasAccommodation());
+        target.setAccommodationCapacity(reqVO.getAccommodationCapacity());
+        target.setBaseFeature(reqVO.getBaseFeature());
+        target.setInstitutionType(reqVO.getInstitutionType());
+        target.setInstitutionTypeOther(reqVO.getInstitutionTypeOther());
+        target.setProductFeature(reqVO.getProductFeature());
+        target.setAnnualVisitorsRange(reqVO.getAnnualVisitorsRange());
     }
 
     private Long getLoginUserId() {

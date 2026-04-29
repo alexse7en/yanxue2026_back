@@ -1,7 +1,9 @@
 package cn.iocoder.yudao.module.yw.controller.admin.vip;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.yw.service.vip.YwIndustrySurveyService;
+import cn.iocoder.yudao.module.yw.vo.vip.YwIndustrySurveyPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwIndustrySurveyRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwIndustrySurveySaveReqVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,18 @@ public class YwIndustrySurveyController {
 
     @Resource
     private YwIndustrySurveyService industrySurveyService;
+
+    @GetMapping("/page")
+    @Operation(summary = "行业调查数据中心分页")
+    public CommonResult<PageResult<YwIndustrySurveyRespVO>> getPage(@Valid YwIndustrySurveyPageReqVO pageReqVO) {
+        return success(industrySurveyService.getIndustrySurveyPage(pageReqVO));
+    }
+
+    @GetMapping("/get")
+    @Operation(summary = "行业调查数据中心详情")
+    public CommonResult<YwIndustrySurveyRespVO> get(@RequestParam("id") Long id) {
+        return success(industrySurveyService.getIndustrySurvey(id));
+    }
 
     @GetMapping("/get-my")
     @Operation(summary = "查询我的行业研究问卷")
