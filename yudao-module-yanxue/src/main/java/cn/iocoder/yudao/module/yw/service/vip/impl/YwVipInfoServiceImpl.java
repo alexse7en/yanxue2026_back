@@ -25,7 +25,7 @@ public class YwVipInfoServiceImpl implements YwVipInfoService {
     private YwVipInfoMapper vipInfoMapper;
 
     @Override
-    public PageResult<YwVipInfoRespVO> getVipInfoPage(YwVipInfoPageReqVO pageReqVO) {
+    public PageResult<YwVipInfoRespVO>  getVipInfoPage(YwVipInfoPageReqVO pageReqVO) {
         PageResult<YwVipInfoDO> pageResult = vipInfoMapper.selectPage(pageReqVO);
         return YwVipInfoApplyConvert.INSTANCE.convertVipInfoPage(pageResult);
     }
