@@ -31,7 +31,7 @@ public interface YwVipInfoMapper extends BaseMapperX<YwVipInfoDO> {
                 .likeIfPresent(YwVipInfoDO::getCompanyName, reqVO.getCompanyName())
                 .eqIfPresent(YwVipInfoDO::getMemberLevel, reqVO.getMemberLevel())
                 .eqIfPresent(YwVipInfoDO::getStatus, reqVO.getStatus())
-                .orderByDesc(YwVipInfoDO::getId);
+                .orderByAsc(YwVipInfoDO::getId);
         queryWrapper.and(StringUtils.hasText(reqVO.getKeyword()),
                 wrapper -> wrapper.like(YwVipInfoDO::getCompanyName, reqVO.getKeyword())
                         .or().like(YwVipInfoDO::getCompanyAddress, reqVO.getKeyword()));
