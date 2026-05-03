@@ -8,9 +8,9 @@ import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwYanxueArticleDO;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwCertStudentMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwOrgInfoMapper;
+import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwTutorCertMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwYanxueArticleMapper;
-import cn.iocoder.yudao.module.yw.ps.dal.mysql.YwAuthLevelMapper;
 import cn.iocoder.yudao.module.yw.service.YwPortalService;
 import cn.iocoder.yudao.module.yw.vo.portal.page.YwPortalArticlePageReqVO;
 import cn.iocoder.yudao.module.yw.vo.portal.page.YwPortalOrgInfoPageReqVO;
@@ -45,7 +45,7 @@ public class YwPortalServiceImpl implements YwPortalService {
     @Resource
     private YwCertStudentMapper ywCertStudentMapper;
     @Resource
-    private YwAuthLevelMapper ywAuthLevelMapper;
+    private YwTutorCertMapper ywTutorCertMapper;
 
     @Override
     public PageResult<YwPortalArticleRespVO> getPortalArticlePage(YwPortalArticlePageReqVO reqVO) {
@@ -104,13 +104,15 @@ public class YwPortalServiceImpl implements YwPortalService {
     public PageResult<YwPortalCertRespVO> queryStudentCert(YwPortalCertQueryReqVO reqVO) {
         validateCertQueryCondition(reqVO);
         List<YwPortalCertRespVO> list = ywCertStudentMapper.selectPortalStudentCertList(reqVO);
+        list.forEach(this::maskIdCard);
         return new PageResult<>(list, (long) list.size());
     }
 
     @Override
     public PageResult<YwPortalCertRespVO> queryTutorCert(YwPortalCertQueryReqVO reqVO) {
         validateCertQueryCondition(reqVO);
-        List<YwPortalCertRespVO> list = ywAuthLevelMapper.selectPortalTutorCertList(reqVO);
+        List<YwPortalCertRespVO> list = ywTutorCertMapper.selectPortalTutorCertList(reqVO);
+        list.forEach(this::maskIdCard);
         return new PageResult<>(list, (long) list.size());
     }
 
@@ -120,5 +122,34 @@ public class YwPortalServiceImpl implements YwPortalService {
         if (!hasCertNo && !hasNameAndSuffix) {
             throw exception(YW_PORTAL_CERT_QUERY_CONDITION_REQUIRED);
         }
+        if (StringUtils.hasText(reqVO.getName())) {
+            reqVO.setName(reqVO.getName().trim());
+        }
+        if (StringUtils.hasText(reqVO.getIdCardSuffix())) {
+            reqVO.setIdCardSuffix(reqVO.getIdCardSuffix().trim());
+        }
+        if (StringUtils.hasText(reqVO.getCertNo())) {
+            reqVO.setCertNo(reqVO.getCertNo().trim());
+        }
+        if (!hasCertNo && reqVO.getIdCardSuffix().length() != 6) {
+            throw exception(YW_PORTAL_CERT_QUERY_CONDITION_REQUIRED);
+        }
+    }
+
+    private void maskIdCard(YwPortalCertRespVO respVO) {
+        String idCard = respVO.getIdCard();
+        if (!StringUtils.hasText(idCard) || idCard.length() <= 9) {
+            return;
+        }
+        int maskLength = idCard.length() - 9;
+        respVO.setIdCard(idCard.substring(0, 3) + repeatStar(maskLength) + idCard.substring(idCard.length() - 6));
+    }
+
+    private String repeatStar(int count) {
+        StringBuilder builder = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            builder.append('*');
+        }
+        return builder.toString();
     }
 }

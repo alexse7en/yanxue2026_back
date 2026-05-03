@@ -3,8 +3,6 @@ package cn.iocoder.yudao.module.yw.vo.portal.resp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Schema(description = "用户 APP - 首页证书查询 Response VO")
 @Data
 public class YwPortalCertRespVO {
@@ -18,5 +16,5 @@ public class YwPortalCertRespVO {
     @Schema(description = "证书图片地址，待数据库真实列确认")
     private String certImageUrl;
 
-    private LocalDateTime issueDate;
+    private String issueDate;
 }

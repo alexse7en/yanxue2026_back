@@ -39,7 +39,7 @@ public interface YwCertStudentMapper extends BaseMapperX<YwCertStudentDO> {
             "       student_name AS userName, " +
             "       id_card AS idCard, " +
             "       cert_image_url AS certImageUrl, " +
-            "       issue_time AS issueDate " +
+            "       DATE_FORMAT(issue_time, '%Y-%m-%d %H:%i:%s') AS issueDate " +
             "FROM yw_yanxue_cert_student " +
             "WHERE deleted = 0 " +
             "<if test='reqVO.name != null and reqVO.name != \"\"'>" +
