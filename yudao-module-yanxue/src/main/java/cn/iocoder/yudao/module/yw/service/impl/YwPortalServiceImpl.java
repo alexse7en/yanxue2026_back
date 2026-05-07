@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.yw.convert.portal.YwPortalConvert;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwOrgInfoDO;
+import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwTutorCertDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwVipInfoDO;
 import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwYanxueArticleDO;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwCertStudentMapper;
@@ -25,6 +26,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -46,6 +48,8 @@ public class YwPortalServiceImpl implements YwPortalService {
     private YwCertStudentMapper ywCertStudentMapper;
     @Resource
     private YwTutorCertMapper ywTutorCertMapper;
+    @Resource
+    private YwTutorCertImageGenerator tutorCertImageGenerator;
 
     @Override
     public PageResult<YwPortalArticleRespVO> getPortalArticlePage(YwPortalArticlePageReqVO reqVO) {
@@ -111,8 +115,11 @@ public class YwPortalServiceImpl implements YwPortalService {
     @Override
     public PageResult<YwPortalCertRespVO> queryTutorCert(YwPortalCertQueryReqVO reqVO) {
         validateCertQueryCondition(reqVO);
-        List<YwPortalCertRespVO> list = ywTutorCertMapper.selectPortalTutorCertList(reqVO);
-        list.forEach(this::maskIdCard);
+        List<YwTutorCertDO> certList = ywTutorCertMapper.selectPortalTutorCertList(reqVO);
+        List<YwPortalCertRespVO> list = new ArrayList<>(certList.size());
+        for (YwTutorCertDO cert : certList) {
+            list.add(convertTutorCert(cert));
+        }
         return new PageResult<>(list, (long) list.size());
     }
 
@@ -143,6 +150,33 @@ public class YwPortalServiceImpl implements YwPortalService {
         }
         int maskLength = idCard.length() - 9;
         respVO.setIdCard(idCard.substring(0, 3) + repeatStar(maskLength) + idCard.substring(idCard.length() - 6));
+    }
+
+    private YwPortalCertRespVO convertTutorCert(YwTutorCertDO cert) {
+        YwPortalCertRespVO respVO = new YwPortalCertRespVO();
+        respVO.setId(cert.getId());
+        respVO.setCertNo(cert.getCertificateNo());
+        respVO.setCertName(buildTutorCertName(cert.getPost()));
+        respVO.setUserName(cert.getName());
+        respVO.setIdCard(cert.getPeopleId());
+        respVO.setIssueDate(cert.getEffectiveData());
+        respVO.setCertImageUrl(resolveTutorCertImage(cert));
+        maskIdCard(respVO);
+        return respVO;
+    }
+
+    private String resolveTutorCertImage(YwTutorCertDO cert) {
+        if (StringUtils.hasText(cert.getCertpic())) {
+            return cert.getCertpic();
+        }
+        String certpic = tutorCertImageGenerator.generateAndUpload(cert);
+        ywTutorCertMapper.updateCertpic(cert.getId(), certpic);
+        cert.setCertpic(certpic);
+        return certpic;
+    }
+
+    private String buildTutorCertName(String post) {
+        return StringUtils.hasText(post) ? post + "研学指导师证书" : "研学指导师证书";
     }
 
     private String repeatStar(int count) {

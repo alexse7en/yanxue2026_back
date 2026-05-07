@@ -27,6 +27,7 @@ public class YwTutorCertDO {
     private String qrCode;
     private String avatar;
     private String effectiveData;
+    private String certpic;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
