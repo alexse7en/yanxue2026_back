@@ -37,6 +37,8 @@ import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_PORTAL_CERT
 public class YwPortalServiceImpl implements YwPortalService {
 
     private static final Integer PUBLISHED_STATUS = 1;
+    private static final String ORG_TYPE_BASE = "base";
+    private static final String ORG_TYPE_ORGANIZATION = "organization";
 
     @Resource
     private YwYanxueArticleMapper ywYanxueArticleMapper;
@@ -73,7 +75,9 @@ public class YwPortalServiceImpl implements YwPortalService {
     public PageResult<YwPortalVipInfoRespVO> getPortalVipInfoPage(YwPortalVipInfoPageReqVO reqVO) {
         reqVO.setStatus(PUBLISHED_STATUS);
         PageResult<YwVipInfoDO> pageResult = ywVipInfoMapper.selectPortalPage(reqVO);
-        return new PageResult<>(YwPortalConvert.INSTANCE.convertVipList(pageResult.getList()), pageResult.getTotal());
+        List<YwPortalVipInfoRespVO> list = YwPortalConvert.INSTANCE.convertVipList(pageResult.getList());
+        list.forEach(this::fillVipQualifications);
+        return new PageResult<>(list, pageResult.getTotal());
     }
 
     @Override
@@ -83,7 +87,9 @@ public class YwPortalServiceImpl implements YwPortalService {
         if (vipInfo == null || !PUBLISHED_STATUS.equals(vipInfo.getStatus())) {
             return null;
         }
-        return YwPortalConvert.INSTANCE.convertVip(vipInfo);
+        YwPortalVipInfoRespVO respVO = YwPortalConvert.INSTANCE.convertVip(vipInfo);
+        fillVipQualifications(respVO);
+        return respVO;
     }
 
     @Override
@@ -185,5 +191,15 @@ public class YwPortalServiceImpl implements YwPortalService {
             builder.append('*');
         }
         return builder.toString();
+    }
+
+    private void fillVipQualifications(YwPortalVipInfoRespVO vipInfo) {
+        if (vipInfo == null || vipInfo.getId() == null) {
+            return;
+        }
+        vipInfo.setHasBaseQualification(ywOrgInfoMapper.existsByVipinfoIdAndOrgType(
+                vipInfo.getId(), ORG_TYPE_BASE, PUBLISHED_STATUS));
+        vipInfo.setHasOrgQualification(ywOrgInfoMapper.existsByVipinfoIdAndOrgType(
+                vipInfo.getId(), ORG_TYPE_ORGANIZATION, PUBLISHED_STATUS));
     }
 }

@@ -39,6 +39,13 @@ public interface YwOrgInfoMapper extends BaseMapperX<YwOrgInfoDO> {
                 .last("limit 1"));
     }
 
+    default boolean existsByVipinfoIdAndOrgType(Long vipinfoId, String orgType, Integer status) {
+        return selectCount(new LambdaQueryWrapperX<YwOrgInfoDO>()
+                .eq(YwOrgInfoDO::getVipinfoId, vipinfoId)
+                .eq(YwOrgInfoDO::getOrgType, orgType)
+                .eqIfPresent(YwOrgInfoDO::getStatus, status)) > 0;
+    }
+
     default PageResult<YwOrgInfoDO> selectPortalPage(YwPortalOrgInfoPageReqVO reqVO) {
         LambdaQueryWrapperX<YwOrgInfoDO> queryWrapper = new LambdaQueryWrapperX<YwOrgInfoDO>()
                 .likeIfPresent(YwOrgInfoDO::getUnitName, reqVO.getUnitName())
