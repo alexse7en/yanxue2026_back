@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.yw.service.vip;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.yw.vo.vip.YwYanxueArticleExcelVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwYanxueArticleImportRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwYanxueArticlePageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwYanxueArticleRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwYanxueArticleSaveReqVO;
@@ -21,4 +23,8 @@ public interface YwYanxueArticleService {
     PageResult<YwYanxueArticleRespVO> getArticlePage(YwYanxueArticlePageReqVO pageReqVO);
 
     List<YwYanxueArticleRespVO> getArticleList(YwYanxueArticlePageReqVO pageReqVO);
+
+    List<YwYanxueArticleExcelVO> getArticleExcelList(YwYanxueArticlePageReqVO pageReqVO);
+
+    YwYanxueArticleImportRespVO importArticleList(List<YwYanxueArticleExcelVO> importArticles, boolean updateSupport);
 }
