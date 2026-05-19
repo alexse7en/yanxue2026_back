@@ -53,6 +53,13 @@ public class YwCertStudentApplyController {
         return success(certStudentApplyService.getApply(id));
     }
 
+    @GetMapping("/get-audit")
+    @Operation(summary = "管理员查询单条证书申请详情")
+    @Parameter(name = "id", description = "申请批次 ID", required = true)
+    public CommonResult<YwCertStudentApplyRespVO> getAudit(@RequestParam("id") Long id) {
+        return success(certStudentApplyService.getApplyForAudit(id));
+    }
+
     @PostMapping("/parse")
     @Operation(summary = "解析上传的学生证书 Excel")
     public CommonResult<YwCertStudentApplyRespVO> parse(@Valid @RequestBody YwCertStudentApplyParseReqVO reqVO) {

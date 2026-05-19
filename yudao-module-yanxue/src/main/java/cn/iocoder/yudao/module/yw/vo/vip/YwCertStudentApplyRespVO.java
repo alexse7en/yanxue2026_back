@@ -19,6 +19,8 @@ public class YwCertStudentApplyRespVO {
     private String parseError;
     private Integer parseCount;
     private String downloadUrl;
+    private Integer generateStatus;
+    private String generateError;
     private String auditRemark;
     private LocalDateTime auditTime;
     private Long auditorId;

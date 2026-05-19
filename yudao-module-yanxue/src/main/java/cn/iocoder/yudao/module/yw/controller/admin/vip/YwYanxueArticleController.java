@@ -77,9 +77,9 @@ public class YwYanxueArticleController {
     @Operation(summary = "获得研学首页文章分页")
     public CommonResult<PageResult<YwYanxueArticleRespVO>> getPage(@Valid YwYanxueArticlePageReqVO pageReqVO) {
         return success(yanxueArticleService.getArticlePage(pageReqVO));
-    }
+}
 
-    @GetMapping("/export-excel")
+@GetMapping("/export-excel")
     @Operation(summary = "导出研学首页文章 Excel")
     @ApiAccessLog(operateType = EXPORT)
     public void exportExcel(@Valid YwYanxueArticlePageReqVO pageReqVO,

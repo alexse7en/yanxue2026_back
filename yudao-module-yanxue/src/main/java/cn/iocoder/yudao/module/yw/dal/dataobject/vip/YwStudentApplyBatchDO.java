@@ -36,6 +36,11 @@ public class YwStudentApplyBatchDO extends TenantBaseDO {
     private String parseError;
     private Integer parseCount;
     private String downloadUrl;
+    /**
+     * 生成状态：0-未生成 1-生成中 2-生成成功 3-生成失败
+     */
+    private Integer generateStatus;
+    private String generateError;
     private String auditRemark;
     private LocalDateTime auditTime;
     private Long auditorId;

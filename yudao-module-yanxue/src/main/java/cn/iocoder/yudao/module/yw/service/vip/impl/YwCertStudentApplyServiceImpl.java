@@ -21,6 +21,8 @@ import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplySubmitReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwStudentApplyDetailSaveReqVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
@@ -38,6 +40,8 @@ import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDEN
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_STATUS_NOT_PENDING;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_SUBMIT_STATUS_INVALID;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_VIPINFO_NOT_EXISTS;
+import static cn.iocoder.yudao.module.yw.service.vip.impl.YwCertStudentGenerator.GENERATE_STATUS_NONE;
+import static cn.iocoder.yudao.module.yw.service.vip.impl.YwCertStudentGenerator.GENERATE_STATUS_RUNNING;
 
 @Service
 @Validated
@@ -75,6 +79,15 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
     }
 
     @Override
+    public YwCertStudentApplyRespVO getApplyForAudit(Long id) {
+        YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectById(id);
+        if (batch == null) {
+            throw exception(YW_CERT_STUDENT_APPLY_NOT_EXISTS);
+        }
+        return buildResp(batch);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public YwCertStudentApplyRespVO parseApply(YwCertStudentApplyParseReqVO reqVO) {
         validateExcelFileType(reqVO.getFileType(), reqVO.getFilePath());
@@ -93,6 +106,8 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
         batch.setUploadFilePath(reqVO.getFilePath());
         batch.setFileType(resolveFileType(reqVO.getFileType(), reqVO.getFilePath()));
         batch.setDownloadUrl(null);
+        batch.setGenerateStatus(GENERATE_STATUS_NONE);
+        batch.setGenerateError(null);
         batch.setAuditRemark(null);
         batch.setAuditTime(null);
         batch.setAuditorId(null);
@@ -151,6 +166,9 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
         overwriteDetails(batch.getId(), batch.getUserId(), batch.getVipinfoId(), reqVO.getDetails());
         validateTokenBalance(batch);
         batch.setApplyStatus(APPLY_STATUS_PENDING);
+        batch.setDownloadUrl(null);
+        batch.setGenerateStatus(GENERATE_STATUS_NONE);
+        batch.setGenerateError(null);
         batch.setAuditRemark(null);
         batch.setAuditTime(null);
         batch.setAuditorId(null);
@@ -185,11 +203,30 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
         batch.setAuditRemark(reqVO.getAuditRemark());
         batch.setAuditTime(LocalDateTime.now());
         batch.setAuditorId(SecurityFrameworkUtils.getLoginUserId());
+        if (Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)) {
+            batch.setDownloadUrl(null);
+            batch.setGenerateStatus(GENERATE_STATUS_RUNNING);
+            batch.setGenerateError(null);
+        }
         studentApplyBatchMapper.updateById(batch);
 
         if (Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)) {
-            certStudentGenerator.generate(batch.getId());
+            runAfterCommit(() -> certStudentGenerator.generateAsync(batch.getId()));
         }
+    }
+
+    private void runAfterCommit(Runnable runnable) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            runnable.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+
+            @Override
+            public void afterCommit() {
+                runnable.run();
+            }
+        });
     }
 
     private void overwriteDetails(Long batchId, Long userId, Long vipinfoId, List<YwStudentApplyDetailSaveReqVO> details) {

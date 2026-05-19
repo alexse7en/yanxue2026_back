@@ -594,3 +594,11 @@ pf4j:
 
 yw:
   first-courese-id: 2
+  cert:
+    student:
+      template-url: classpath:cert/student/student-template.png
+      seal-url: classpath:cert/student/seal.png
+      image-format: png
+      image-url-connect-timeout-ms: 3000
+      image-url-read-timeout-ms: 10000
+      template-max-width: 2400

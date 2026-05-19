@@ -9,7 +9,12 @@ import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwCertStudentMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwStudentApplyBatchMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwStudentApplyMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -19,14 +24,15 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.image.ColorModel;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,9 +49,15 @@ import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDEN
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_VIPINFO_NOT_EXISTS;
 
 @Component
+@Slf4j
 public class YwCertStudentGenerator {
 
     private static final String FULL_WIDTH_INDENT = "　　";
+    public static final int GENERATE_STATUS_NONE = 0;
+    public static final int GENERATE_STATUS_RUNNING = 1;
+    public static final int GENERATE_STATUS_SUCCESS = 2;
+    public static final int GENERATE_STATUS_FAIL = 3;
+
     private final Object imageCacheLock = new Object();
 
     private volatile String cachedTemplateUrl;
@@ -53,10 +65,18 @@ public class YwCertStudentGenerator {
     private volatile String cachedSealUrl;
     private volatile BufferedImage cachedSealImage;
 
-    @Value("${yw.cert.student.template-url:https://gdyx-edu-winxapp-resource.oss-cn-guangzhou.aliyuncs.com/yanxue2026/%E8%AF%81%E4%B9%A6%E6%A8%A1%E7%89%88.png}")
+    @Value("${yw.cert.student.template-url:classpath:cert/student/student-template.png}")
     private String templateUrl;
-    @Value("${yw.cert.student.seal-url:https://gdyx-edu-winxapp-resource.oss-cn-guangzhou.aliyuncs.com/yanxue2026/%E7%94%B5%E5%AD%90%E7%AB%A0.png}")
+    @Value("${yw.cert.student.seal-url:classpath:cert/student/seal.png}")
     private String sealUrl;
+    @Value("${yw.cert.student.image-format:png}")
+    private String imageFormat;
+    @Value("${yw.cert.student.image-url-connect-timeout-ms:3000}")
+    private int imageUrlConnectTimeoutMs;
+    @Value("${yw.cert.student.image-url-read-timeout-ms:10000}")
+    private int imageUrlReadTimeoutMs;
+    @Value("${yw.cert.student.template-max-width:2400}")
+    private int templateMaxWidth;
 
     @Resource
     private YwStudentApplyBatchMapper studentApplyBatchMapper;
@@ -73,6 +93,35 @@ public class YwCertStudentGenerator {
         return StringUtils.hasText(templateUrl) && StringUtils.hasText(sealUrl);
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void preloadImages() {
+        if (!hasConfig()) {
+            return;
+        }
+        try {
+            loadTemplateImage();
+            loadSealImage();
+            log.info("[preloadImages][学生证书底版和电子章预热成功]");
+        } catch (Exception e) {
+            log.warn("[preloadImages][学生证书底版或电子章预热失败，首次生成时会再次尝试：{}]", limitMsg(e.getMessage()), e);
+        }
+    }
+
+    @Async
+    public void generateAsync(Long batchId) {
+        try {
+            generate(batchId);
+        } catch (Exception e) {
+            YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectById(batchId);
+            if (batch != null) {
+                batch.setGenerateStatus(GENERATE_STATUS_FAIL);
+                batch.setGenerateError(limitMsg(e.getMessage()));
+                studentApplyBatchMapper.updateById(batch);
+            }
+            log.error("[generateAsync][学生证书生成失败，batchId={}]", batchId, e);
+        }
+    }
+
     public void generate(Long batchId) {
         if (!hasConfig()) {
             throw exception(YW_CERT_STUDENT_APPLY_TEMPLATE_NOT_CONFIG);
@@ -83,6 +132,9 @@ public class YwCertStudentGenerator {
         }
         List<YwStudentApplyDO> details = studentApplyMapper.selectListByBatchId(batchId);
         if (details.isEmpty()) {
+            batch.setGenerateStatus(GENERATE_STATUS_FAIL);
+            batch.setGenerateError("未查询到待生成的学生证书明细");
+            studentApplyBatchMapper.updateById(batch);
             return;
         }
         YwVipInfoDO vipInfo = vipInfoMapper.selectById(batch.getVipinfoId());
@@ -94,6 +146,10 @@ public class YwCertStudentGenerator {
         if (balance.compareTo(needToken) < 0) {
             throw exception(YW_CERT_STUDENT_APPLY_TOKEN_NOT_ENOUGH);
         }
+        batch.setGenerateStatus(GENERATE_STATUS_RUNNING);
+        batch.setGenerateError(null);
+        studentApplyBatchMapper.updateById(batch);
+
         vipInfo.setTokenBalance(balance.subtract(needToken));
         vipInfoMapper.updateById(vipInfo);
 
@@ -103,14 +159,15 @@ public class YwCertStudentGenerator {
         }
         certStudentMapper.deleteByApplyDetailIds(detailIds);
 
-        List<ZipFileItem> zipItems = new ArrayList<>();
         int certYear = Year.now().getValue();
         int nextNo = resolveNextNo(certYear);
-        for (YwStudentApplyDO detail : details) {
-            String certNo = buildCertNo(certYear, nextNo++);
-            try {
+        ByteArrayOutputStream zipBuffer = new ByteArrayOutputStream();
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(zipBuffer, StandardCharsets.UTF_8)) {
+            for (YwStudentApplyDO detail : details) {
+                String certNo = buildCertNo(certYear, nextNo++);
                 byte[] certBytes = renderCertImage(detail, certNo);
-                String certPath = fileApi.createFile(certBytes, certNo + ".png", "yw/cert/student", "image/png");
+                String fileExtension = getImageFileExtension();
+                String certPath = fileApi.createFile(certBytes, certNo + "." + fileExtension, "yw/cert/student", getImageMimeType());
                 YwCertStudentDO cert = new YwCertStudentDO();
                 cert.setApplyDetailId(detail.getId());
                 cert.setUserId(detail.getUserId());
@@ -129,21 +186,19 @@ public class YwCertStudentGenerator {
                 cert.setCertImageUrl(certPath);
                 cert.setIssueTime(LocalDateTime.now());
                 certStudentMapper.insert(cert);
-                zipItems.add(new ZipFileItem(certNo + "-" + safeName(detail.getStudentName()) + ".png", certBytes));
-            } catch (Exception e) {
-                throw new RuntimeException(limitMsg(e.getMessage()), e);
+
+                zipOutputStream.putNextEntry(new ZipEntry(certNo + "-" + safeName(detail.getStudentName()) + "." + fileExtension));
+                zipOutputStream.write(certBytes);
+                zipOutputStream.closeEntry();
             }
+        } catch (Exception e) {
+            throw new RuntimeException(limitMsg(e.getMessage()), e);
         }
-        if (!zipItems.isEmpty()) {
-            try {
-                byte[] zipBytes = buildZip(zipItems);
-                String downloadUrl = fileApi.createFile(zipBytes, batch.getApplyNo() + ".zip", "yw/cert/student", "application/zip");
-                batch.setDownloadUrl(downloadUrl);
-                studentApplyBatchMapper.updateById(batch);
-            } catch (Exception e) {
-                throw new RuntimeException(limitMsg(e.getMessage()), e);
-            }
-        }
+        String downloadUrl = fileApi.createFile(zipBuffer.toByteArray(), batch.getApplyNo() + ".zip", "yw/cert/student", "application/zip");
+        batch.setDownloadUrl(downloadUrl);
+        batch.setGenerateStatus(GENERATE_STATUS_SUCCESS);
+        batch.setGenerateError(null);
+        studentApplyBatchMapper.updateById(batch);
     }
 
     private int resolveNextNo(int certYear) {
@@ -195,9 +250,7 @@ public class YwCertStudentGenerator {
         } finally {
             g.dispose();
         }
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ImageIO.write(template, "png", outputStream);
-        return outputStream.toByteArray();
+        return writeImage(template);
     }
 
     private void drawStyledParagraphs(Graphics2D g, List<List<TextSegment>> paragraphs, Font plainFont, Font boldFont,
@@ -259,7 +312,7 @@ public class YwCertStudentGenerator {
         }
         synchronized (imageCacheLock) {
             if (cachedTemplateImage == null || !templateUrl.equals(cachedTemplateUrl)) {
-                cachedTemplateImage = readImage(templateUrl);
+                cachedTemplateImage = resizeTemplateIfNecessary(readImage(templateUrl));
                 cachedTemplateUrl = templateUrl;
             }
             return cachedTemplateImage;
@@ -285,6 +338,26 @@ public class YwCertStudentGenerator {
         boolean isAlphaPremultiplied = colorModel.isAlphaPremultiplied();
         WritableRaster raster = source.copyData(null);
         return new BufferedImage(colorModel, raster, isAlphaPremultiplied, null);
+    }
+
+    private BufferedImage resizeTemplateIfNecessary(BufferedImage image) {
+        if (templateMaxWidth <= 0 || image.getWidth() <= templateMaxWidth) {
+            return image;
+        }
+        int targetWidth = templateMaxWidth;
+        int targetHeight = (int) Math.round(image.getHeight() * (targetWidth * 1.0 / image.getWidth()));
+        BufferedImage resized = new BufferedImage(targetWidth, targetHeight, image.getType() == 0 ? BufferedImage.TYPE_INT_ARGB : image.getType());
+        Graphics2D g = resized.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g.drawImage(image, 0, 0, targetWidth, targetHeight, null);
+        } finally {
+            g.dispose();
+        }
+        log.info("[resizeTemplateIfNecessary][学生证书底版从 {}x{} 缩放到 {}x{}]",
+                image.getWidth(), image.getHeight(), targetWidth, targetHeight);
+        return resized;
     }
 
     private void drawCentered(Graphics2D g, String text, double centerX, double y) {
@@ -315,29 +388,63 @@ public class YwCertStudentGenerator {
         return paragraphs;
     }
 
-    private byte[] buildZip(List<ZipFileItem> items) throws Exception {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream, StandardCharsets.UTF_8)) {
-            for (ZipFileItem item : items) {
-                zipOutputStream.putNextEntry(new ZipEntry(item.fileName));
-                zipOutputStream.write(item.content);
-                zipOutputStream.closeEntry();
-            }
-        }
-        return outputStream.toByteArray();
-    }
-
     private BufferedImage readImage(String path) throws Exception {
         try (InputStream inputStream = openStream(path)) {
-            return ImageIO.read(inputStream);
+            BufferedImage image = ImageIO.read(inputStream);
+            if (image == null) {
+                throw new IllegalArgumentException("图片读取失败：" + path);
+            }
+            return image;
         }
     }
 
     private InputStream openStream(String path) throws Exception {
         if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file://")) {
-            return new URL(path).openStream();
+            URLConnection connection = new URL(path).openConnection();
+            connection.setConnectTimeout(imageUrlConnectTimeoutMs);
+            connection.setReadTimeout(imageUrlReadTimeoutMs);
+            return connection.getInputStream();
+        }
+        if (path.startsWith("classpath:")) {
+            return new ClassPathResource(path.substring("classpath:".length())).getInputStream();
         }
         return new FileInputStream(path);
+    }
+
+    private byte[] writeImage(BufferedImage image) throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        BufferedImage outputImage = image;
+        if ("jpg".equals(getImageWriteFormat()) && image.getColorModel().hasAlpha()) {
+            outputImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = outputImage.createGraphics();
+            try {
+                g.setColor(Color.WHITE);
+                g.fillRect(0, 0, image.getWidth(), image.getHeight());
+                g.drawImage(image, 0, 0, null);
+            } finally {
+                g.dispose();
+            }
+        }
+        if (!ImageIO.write(outputImage, getImageWriteFormat(), outputStream)) {
+            throw new IllegalArgumentException("不支持的证书图片格式：" + imageFormat);
+        }
+        return outputStream.toByteArray();
+    }
+
+    private String getImageWriteFormat() {
+        String format = StringUtils.hasText(imageFormat) ? imageFormat.trim().toLowerCase() : "png";
+        if ("jpg".equals(format) || "jpeg".equals(format)) {
+            return "jpg";
+        }
+        return "png";
+    }
+
+    private String getImageFileExtension() {
+        return "jpg".equals(getImageWriteFormat()) ? "jpg" : "png";
+    }
+
+    private String getImageMimeType() {
+        return "jpg".equals(getImageWriteFormat()) ? "image/jpeg" : "image/png";
     }
 
     private String safeName(String text) {
@@ -360,16 +467,6 @@ public class YwCertStudentGenerator {
             return "证书生成失败";
         }
         return msg.length() > 500 ? msg.substring(0, 500) : msg;
-    }
-
-    private static class ZipFileItem {
-        private final String fileName;
-        private final byte[] content;
-
-        private ZipFileItem(String fileName, byte[] content) {
-            this.fileName = fileName;
-            this.content = content;
-        }
     }
 
     private static class TextSegment {

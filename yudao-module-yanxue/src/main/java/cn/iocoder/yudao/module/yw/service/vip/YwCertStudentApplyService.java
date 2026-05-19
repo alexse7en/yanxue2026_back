@@ -14,6 +14,8 @@ public interface YwCertStudentApplyService {
 
     YwCertStudentApplyRespVO getApply(Long id);
 
+    YwCertStudentApplyRespVO getApplyForAudit(Long id);
+
     YwCertStudentApplyRespVO parseApply(YwCertStudentApplyParseReqVO reqVO);
 
     Long submitApply(YwCertStudentApplySubmitReqVO reqVO);
