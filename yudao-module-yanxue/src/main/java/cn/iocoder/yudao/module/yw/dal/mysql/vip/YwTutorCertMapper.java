@@ -32,6 +32,14 @@ public interface YwTutorCertMapper extends BaseMapperX<YwTutorCertDO> {
             "</script>")
     List<YwTutorCertDO> selectPortalTutorCertList(@Param("reqVO") YwPortalCertQueryReqVO reqVO);
 
+    @Select("SELECT id, name, people_id, certificate_no, sex, post, score, grade, qr_code, avatar, effective_data, " +
+            "       certpic, create_time, update_time " +
+            "FROM yx_certificate_retrieval1 " +
+            "WHERE certpic IS NULL OR certpic = '' " +
+            "ORDER BY id ASC " +
+            "LIMIT #{limit}")
+    List<YwTutorCertDO> selectMissingCertpicList(@Param("limit") Integer limit);
+
     @Update("UPDATE yx_certificate_retrieval1 SET certpic = #{certpic}, update_time = NOW() WHERE id = #{id}")
     int updateCertpic(@Param("id") Long id, @Param("certpic") String certpic);
 }

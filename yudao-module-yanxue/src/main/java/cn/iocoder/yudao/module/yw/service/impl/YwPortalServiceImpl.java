@@ -13,6 +13,7 @@ import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwTutorCertMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwVipInfoMapper;
 import cn.iocoder.yudao.module.yw.dal.mysql.vip.YwYanxueArticleMapper;
 import cn.iocoder.yudao.module.yw.service.YwPortalService;
+import cn.iocoder.yudao.module.yw.service.vip.YwTutorCertService;
 import cn.iocoder.yudao.module.yw.vo.portal.page.YwPortalArticlePageReqVO;
 import cn.iocoder.yudao.module.yw.vo.portal.page.YwPortalOrgInfoPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.portal.page.YwPortalVipInfoPageReqVO;
@@ -51,7 +52,7 @@ public class YwPortalServiceImpl implements YwPortalService {
     @Resource
     private YwTutorCertMapper ywTutorCertMapper;
     @Resource
-    private YwTutorCertImageGenerator tutorCertImageGenerator;
+    private YwTutorCertService tutorCertService;
 
     @Override
     public PageResult<YwPortalArticleRespVO> getPortalArticlePage(YwPortalArticlePageReqVO reqVO) {
@@ -172,13 +173,7 @@ public class YwPortalServiceImpl implements YwPortalService {
     }
 
     private String resolveTutorCertImage(YwTutorCertDO cert) {
-        if (StringUtils.hasText(cert.getCertpic())) {
-            return cert.getCertpic();
-        }
-        String certpic = tutorCertImageGenerator.generateAndUpload(cert);
-        ywTutorCertMapper.updateCertpic(cert.getId(), certpic);
-        cert.setCertpic(certpic);
-        return certpic;
+        return tutorCertService.resolveTutorCertImage(cert);
     }
 
     private String buildTutorCertName(String post) {

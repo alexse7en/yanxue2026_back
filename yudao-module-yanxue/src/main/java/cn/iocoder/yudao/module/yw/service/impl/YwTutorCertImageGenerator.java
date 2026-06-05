@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -34,13 +35,19 @@ public class YwTutorCertImageGenerator {
     private volatile BufferedImage cachedTemplateImage;
     private volatile String cachedSealPath;
     private volatile BufferedImage cachedSealImage;
+    private volatile String cachedFontPath;
+    private volatile Font cachedBaseFont;
 
-    @Value("${yw.cert.tutor.template-path:imgs/cert-tutor.png}")
+    @Value("${yw.cert.tutor.template-path:classpath:cert/tutor/tutor-template.png}")
     private String templatePath;
-    @Value("${yw.cert.student.seal-url:https://gdyx-edu-winxapp-resource.oss-cn-guangzhou.aliyuncs.com/yanxue2026/%E7%94%B5%E5%AD%90%E7%AB%A0.png}")
+    @Value("${yw.cert.tutor.seal-url:${yw.cert.student.seal-url:classpath:cert/student/seal.png}}")
     private String sealPath;
     @Value("${yw.cert.tutor.avatar-base-path:/www/taotao/StudyTravelSystem/upload/avatar}")
     private String avatarBasePath;
+    @Value("${yw.cert.tutor.font-path:}")
+    private String fontPath;
+    @Value("${yw.cert.tutor.font-name:SimHei}")
+    private String fontName;
 
     @Resource
     private FileApi fileApi;
@@ -77,8 +84,8 @@ public class YwTutorCertImageGenerator {
 
     private void drawTextFields(Graphics2D g, YwTutorCertDO cert, int width, int height) {
         g.setColor(Color.BLACK);
-        Font valueFont = new Font("SimHei", Font.BOLD, Math.max(34, width / 48));
-        Font dateFont = new Font("SimHei", Font.BOLD, Math.max(30, width / 58));
+        Font valueFont = buildFont(Font.BOLD, Math.max(34, width / 48));
+        Font dateFont = buildFont(Font.BOLD, Math.max(30, width / 58));
         g.setFont(valueFont);
 
         drawCentered(g, defaultText(cert.getName()), width * 0.366, height * 0.574);
@@ -153,7 +160,11 @@ public class YwTutorCertImageGenerator {
 
     private BufferedImage readImage(String path) throws Exception {
         try (InputStream inputStream = openStream(path)) {
-            return ImageIO.read(inputStream);
+            BufferedImage image = ImageIO.read(inputStream);
+            if (image == null) {
+                throw new IllegalArgumentException("图片资源读取失败：" + path);
+            }
+            return image;
         }
     }
 
@@ -179,10 +190,38 @@ public class YwTutorCertImageGenerator {
         if (!file.isAbsolute()) {
             file = new File(System.getProperty("user.dir"), path);
         }
-        if (!file.exists() && "imgs/cert-tutor.png".equals(path)) {
-            file = new File("D:/IdeaProject/yanxue2026_admin/src/assets/imgs/cert-tutor.png");
-        }
         return new FileInputStream(file);
+    }
+
+    private Font buildFont(int style, int size) {
+        try {
+            Font baseFont = loadBaseFont();
+            if (baseFont != null) {
+                return baseFont.deriveFont(style, (float) size);
+            }
+        } catch (Exception ignored) {
+        }
+        return new Font(fontName, style, size);
+    }
+
+    private Font loadBaseFont() throws Exception {
+        if (!StringUtils.hasText(fontPath)) {
+            return null;
+        }
+        Font font = cachedBaseFont;
+        if (font != null && fontPath.equals(cachedFontPath)) {
+            return font;
+        }
+        synchronized (imageCacheLock) {
+            if (cachedBaseFont == null || !fontPath.equals(cachedFontPath)) {
+                try (InputStream inputStream = openStream(fontPath)) {
+                    cachedBaseFont = Font.createFont(Font.TRUETYPE_FONT, inputStream);
+                    GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(cachedBaseFont);
+                    cachedFontPath = fontPath;
+                }
+            }
+            return cachedBaseFont;
+        }
     }
 
     private String resolveAvatarPath(String avatar) {
