@@ -15,7 +15,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,9 +50,12 @@ public class YwCertStudentExcelParser {
                 item.setCourseHours(getCellValue(row, headerMap, "courseHours"));
                 item.setCourseProvider(getCellValue(row, headerMap, "courseProvider"));
                 item.setStampUnit(getCellValue(row, headerMap, "stampUnit"));
-                item.setCertDate(parseDate(getCell(row, headerMap, "certDate")));
-                item.setCourseDate(parseDate(getCell(row, headerMap, "courseDate")));
-                item.setStampDate(parseDate(getCell(row, headerMap, "stampDate")));
+                LocalDate certDate = parseDate(getCell(row, headerMap, "certDate"));
+                LocalDate courseDate = parseDate(getCell(row, headerMap, "courseDate"));
+                LocalDate stampDate = parseDate(getCell(row, headerMap, "stampDate"));
+                item.setCourseDate(courseDate != null ? courseDate : certDate);
+                item.setStampDate(stampDate != null ? stampDate : certDate);
+                item.setCertDate(item.getStampDate() != null ? item.getStampDate() : item.getCourseDate());
                 if (!StringUtils.hasText(item.getStudentName())) {
                     continue;
                 }
@@ -100,12 +102,12 @@ public class YwCertStudentExcelParser {
         if (containsAny(header, "身份证号", "身份证号码", "证件号码")) return "idCard";
         if (containsAny(header, "学校名称", "学校")) return "schoolName";
         if (containsAny(header, "班级", "班级名称")) return "className";
-        if (containsAny(header, "课程名称", "研学课程", "课程主题", "课程")) return "courseName";
+        if (containsAny(header, "课程日期", "课程时间", "活动日期", "活动时间", "研学日期")) return "courseDate";
+        if (containsAny(header, "盖章日期", "盖章时间", "落章日期", "落章时间")) return "stampDate";
+        if (containsAny(header, "落证时间", "证书日期", "发证日期", "日期")) return "certDate";
         if (containsAny(header, "学习课时", "课时")) return "courseHours";
         if (containsAny(header, "课程实施方", "实施方")) return "courseProvider";
-        if (containsAny(header, "课程日期", "课程时间", "活动日期", "活动时间", "研学日期")) return "courseDate";
-        if (containsAny(header, "盖章日期", "落章日期", "落章时间")) return "stampDate";
-        if (containsAny(header, "落证时间", "证书日期", "发证日期", "日期")) return "certDate";
+        if (containsAny(header, "课程名称", "研学课程", "课程主题", "课程")) return "courseName";
         if (containsAny(header, "落章单位", "盖章单位", "发证单位")) return "stampUnit";
         return null;
     }
@@ -137,16 +139,45 @@ public class YwCertStudentExcelParser {
         if (cell == null) {
             return null;
         }
-        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-            return cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        CellType type = cell.getCellType();
+        if (type == CellType.FORMULA) {
+            type = cell.getCachedFormulaResultType();
         }
-        String text = normalize(cellToString(cell)).replace("年", "-").replace("月", "-").replace("日", "").replace("/", "-").replace(".", "-");
+        if (type == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            return DateUtil.getLocalDateTime(cell.getNumericCellValue()).toLocalDate();
+        }
+        String text = normalize(cellToString(cell))
+                .replace("年", "-")
+                .replace("月", "-")
+                .replace("日", "")
+                .replace("/", "-")
+                .replace(".", "-")
+                .replaceAll("\\s+", "");
+        if (text.matches("^\\d{8}$")) {
+            return parseDateParts(text.substring(0, 4), text.substring(4, 6), text.substring(6, 8));
+        }
         String[] arr = text.split("-");
         if (arr.length != 3) {
+            return parseExcelSerialDate(text);
+        }
+        return parseDateParts(arr[0], arr[1], arr[2]);
+    }
+
+    private LocalDate parseDateParts(String year, String month, String day) {
+        try {
+            return LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day));
+        } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private LocalDate parseExcelSerialDate(String text) {
         try {
-            return LocalDate.of(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]));
+            double value = Double.parseDouble(text);
+            if (value <= 0 || value > 100000) {
+                return null;
+            }
+            return DateUtil.getLocalDateTime(value).toLocalDate();
         } catch (Exception ignored) {
             return null;
         }
@@ -180,7 +211,7 @@ public class YwCertStudentExcelParser {
         if (type == CellType.BOOLEAN) return String.valueOf(cell.getBooleanCellValue());
         if (type == CellType.NUMERIC) {
             if (DateUtil.isCellDateFormatted(cell)) {
-                return cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString();
+                return DateUtil.getLocalDateTime(cell.getNumericCellValue()).toLocalDate().toString();
             }
             double value = cell.getNumericCellValue();
             return value == Math.rint(value) ? String.valueOf((long) value) : String.valueOf(value);
