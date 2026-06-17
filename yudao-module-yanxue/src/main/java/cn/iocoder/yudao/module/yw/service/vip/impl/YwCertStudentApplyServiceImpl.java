@@ -247,6 +247,8 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
             detail.setCourseHours(item.getCourseHours());
             detail.setCourseProvider(item.getCourseProvider());
             detail.setCertDate(item.getCertDate());
+            detail.setCourseDate(item.getCourseDate());
+            detail.setStampDate(item.getStampDate());
             detail.setStampUnit(item.getStampUnit());
             studentApplyMapper.insert(detail);
         }

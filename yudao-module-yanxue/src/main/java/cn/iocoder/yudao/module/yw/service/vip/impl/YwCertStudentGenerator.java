@@ -23,6 +23,7 @@ import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -64,6 +65,8 @@ public class YwCertStudentGenerator {
     private volatile BufferedImage cachedTemplateImage;
     private volatile String cachedSealUrl;
     private volatile BufferedImage cachedSealImage;
+    private volatile String cachedFontPath;
+    private volatile Font cachedBaseFont;
 
     @Value("${yw.cert.student.template-url:classpath:cert/student/student-template.png}")
     private String templateUrl;
@@ -77,6 +80,10 @@ public class YwCertStudentGenerator {
     private int imageUrlReadTimeoutMs;
     @Value("${yw.cert.student.template-max-width:2400}")
     private int templateMaxWidth;
+    @Value("${yw.cert.student.font-path:${yw.cert.tutor.font-path:}}")
+    private String fontPath;
+    @Value("${yw.cert.student.font-name:${yw.cert.tutor.font-name:SimHei}}")
+    private String fontName;
 
     @Resource
     private YwStudentApplyBatchMapper studentApplyBatchMapper;
@@ -182,6 +189,8 @@ public class YwCertStudentGenerator {
                 cert.setCourseHours(detail.getCourseHours());
                 cert.setCourseProvider(detail.getCourseProvider());
                 cert.setCertDate(detail.getCertDate());
+                cert.setCourseDate(resolveCourseDate(detail));
+                cert.setStampDate(resolveStampDate(detail));
                 cert.setStampUnit(detail.getStampUnit());
                 cert.setCertImageUrl(certPath);
                 cert.setIssueTime(LocalDateTime.now());
@@ -227,24 +236,24 @@ public class YwCertStudentGenerator {
 
             g.setColor(new Color(45, 45, 45));
             int bodyFontSize = Math.max(20, width / 48);
-            Font plainFont = new Font("SimHei", Font.PLAIN, bodyFontSize);
-            Font boldFont = new Font("SimHei", Font.BOLD, bodyFontSize);
+            Font plainFont = buildFont(Font.PLAIN, bodyFontSize);
+            Font boldFont = buildFont(Font.BOLD, bodyFontSize);
             List<List<TextSegment>> paragraphs = buildBodyParagraphs(detail);
             int lineHeight = Math.max(34, bodyFontSize + 10);
             drawStyledParagraphs(g, paragraphs, plainFont, boldFont,
                     (int) (width * 0.17), (int) (height * 0.47), (int) (width * 0.54), lineHeight, 18);
 
-            g.setFont(new Font("Monospaced", Font.PLAIN, Math.max(16, width / 60)));
+            g.setFont(buildFont(Font.PLAIN, Math.max(16, width / 60)));
             g.drawString("证书编号：" + certNo, (int) (width * 0.12), (int) (height * 0.78));
 
-            g.setFont(new Font("Serif", Font.PLAIN, Math.max(16, width / 68)));
+            g.setFont(buildFont(Font.PLAIN, Math.max(16, width / 68)));
             String stampUnit = StringUtils.hasText(detail.getStampUnit()) ? detail.getStampUnit() : detail.getCourseProvider();
             if (StringUtils.hasText(stampUnit)) {
                 drawCentered(g, stampUnit, (int) (width * 0.76), height * 0.75);
             }
-            LocalDate certDate = detail.getCertDate();
-            if (certDate != null) {
-                drawCentered(g, certDate.format(DateTimeFormatter.ofPattern("yyyy年M月d日")), (int) (width * 0.76), height * 0.79);
+            LocalDate stampDate = resolveStampDate(detail);
+            if (stampDate != null) {
+                drawCentered(g, stampDate.format(DateTimeFormatter.ofPattern("yyyy年M月d日")), (int) (width * 0.76), height * 0.79);
             }
             g.drawImage(seal, (int) (width * 0.685), (int) (height * 0.64), (int) (width * 0.14), (int) (width * 0.14), null);
         } finally {
@@ -373,7 +382,7 @@ public class YwCertStudentGenerator {
         first.add(new TextSegment("，", false, false));
         first.add(new TextSegment(defaultText(detail.getSchoolName(), "学校"), true, true));
         first.add(new TextSegment(" 学生，于", false, false));
-        first.add(new TextSegment(formatCertDate(detail.getCertDate()), true, true));
+        first.add(new TextSegment(formatCourseDate(detail), true, true));
         first.add(new TextSegment(" 参加研学认定课程", false, false));
         first.add(new TextSegment(defaultText(detail.getCourseName(), "研学课程"), true, true));
         first.add(new TextSegment(" 实践活动，", false, false));
@@ -409,6 +418,37 @@ public class YwCertStudentGenerator {
             return new ClassPathResource(path.substring("classpath:".length())).getInputStream();
         }
         return new FileInputStream(path);
+    }
+
+    private Font buildFont(int style, int size) {
+        try {
+            Font baseFont = loadBaseFont();
+            if (baseFont != null) {
+                return baseFont.deriveFont(style, (float) size);
+            }
+        } catch (Exception ignored) {
+        }
+        return new Font(fontName, style, size);
+    }
+
+    private Font loadBaseFont() throws Exception {
+        if (!StringUtils.hasText(fontPath)) {
+            return null;
+        }
+        Font font = cachedBaseFont;
+        if (font != null && fontPath.equals(cachedFontPath)) {
+            return font;
+        }
+        synchronized (imageCacheLock) {
+            if (cachedBaseFont == null || !fontPath.equals(cachedFontPath)) {
+                try (InputStream inputStream = openStream(fontPath)) {
+                    cachedBaseFont = Font.createFont(Font.TRUETYPE_FONT, inputStream);
+                    GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(cachedBaseFont);
+                    cachedFontPath = fontPath;
+                }
+            }
+            return cachedBaseFont;
+        }
     }
 
     private byte[] writeImage(BufferedImage image) throws Exception {
@@ -460,6 +500,18 @@ public class YwCertStudentGenerator {
 
     private String formatCertDate(LocalDate certDate) {
         return certDate == null ? "指定日期" : certDate.format(DateTimeFormatter.ofPattern("yyyy年M月d日"));
+    }
+
+    private String formatCourseDate(YwStudentApplyDO detail) {
+        return formatCertDate(resolveCourseDate(detail));
+    }
+
+    private LocalDate resolveCourseDate(YwStudentApplyDO detail) {
+        return detail.getCourseDate() != null ? detail.getCourseDate() : detail.getCertDate();
+    }
+
+    private LocalDate resolveStampDate(YwStudentApplyDO detail) {
+        return detail.getStampDate() != null ? detail.getStampDate() : detail.getCertDate();
     }
 
     private String limitMsg(String msg) {

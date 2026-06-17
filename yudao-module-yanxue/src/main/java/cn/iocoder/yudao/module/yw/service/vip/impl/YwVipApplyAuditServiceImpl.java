@@ -22,6 +22,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -41,7 +42,16 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
     private static final Integer APPLY_STATUS_REJECTED = 11;
     private static final Integer VIP_STATUS_ENABLED = 1;
     private static final String VIP_USER_ROLE_CODE = "4";
-    private static final Pattern MEMBER_NO_PATTERN = Pattern.compile("^GDSTA-\\d{4}[FCLP]\\d{3}$");
+    private static final String MEMBER_LEVEL_VICE_PRESIDENT = "\u526F\u4F1A\u957F\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_VICE_PRESIDENT_SHORT = "\u526F\u4F1A\u957F";
+    private static final String MEMBER_LEVEL_EXECUTIVE_DIRECTOR = "\u5E38\u52A1\u7406\u4E8B\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_EXECUTIVE_DIRECTOR_SHORT = "\u5E38\u52A1\u7406\u4E8B";
+    private static final String MEMBER_LEVEL_DIRECTOR = "\u7406\u4E8B\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_DIRECTOR_SHORT = "\u7406\u4E8B";
+    private static final String MEMBER_LEVEL_MEMBER = "\u4F1A\u5458\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_NORMAL_MEMBER = "\u666E\u901A\u4F1A\u5458";
+    private static final String MEMBER_LEVEL_NORMAL = "\u666E\u901A";
+    private static final Pattern MEMBER_NO_PATTERN = Pattern.compile("^GDSTA-\\d{4}([FCLP])\\d{3}$");
     private static final Pattern MEMBER_NO_SUFFIX_PATTERN = Pattern.compile("^\\d{3}$");
 
     @Resource
@@ -83,7 +93,7 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
         }
 
         if (Objects.equals(reqVO.getApplyStatus(), APPLY_STATUS_APPROVED)) {
-            validateMemberNo(reqVO);
+            validateMemberNo(apply.getApplyLevel(), reqVO);
             validateMemberNoDuplicate(apply.getUserId(), reqVO.getMemberNo());
             upsertVipInfo(apply, reqVO.getMemberNo());
             permissionApi.appendUserRoleByCode(apply.getUserId(), Collections.singleton(VIP_USER_ROLE_CODE));
@@ -97,16 +107,44 @@ public class YwVipApplyAuditServiceImpl implements YwVipApplyAuditService {
         vipApplyMapper.updateById(apply);
     }
 
-    private void validateMemberNo(YwVipApplyAuditReqVO reqVO) {
+    private void validateMemberNo(String applyLevel, YwVipApplyAuditReqVO reqVO) {
         if (!StringUtils.hasText(reqVO.getMemberNo())) {
             throw exception(YW_VIP_APPLY_MEMBER_NO_REQUIRED);
         }
-        if (!MEMBER_NO_PATTERN.matcher(reqVO.getMemberNo()).matches()) {
+        Matcher matcher = MEMBER_NO_PATTERN.matcher(reqVO.getMemberNo());
+        if (!matcher.matches()) {
+            throw exception(YW_VIP_APPLY_MEMBER_NO_INVALID);
+        }
+        String expectedLevelCode = resolveMemberNoLevelCode(applyLevel);
+        if (!Objects.equals(expectedLevelCode, matcher.group(1))) {
             throw exception(YW_VIP_APPLY_MEMBER_NO_INVALID);
         }
         if (StringUtils.hasText(reqVO.getMemberNoSuffix())
                 && !MEMBER_NO_SUFFIX_PATTERN.matcher(reqVO.getMemberNoSuffix()).matches()) {
             throw exception(YW_VIP_APPLY_MEMBER_NO_INVALID);
+        }
+    }
+
+    private String resolveMemberNoLevelCode(String applyLevel) {
+        if (!StringUtils.hasText(applyLevel)) {
+            throw exception(YW_VIP_APPLY_MEMBER_NO_INVALID);
+        }
+        switch (applyLevel.trim()) {
+            case MEMBER_LEVEL_VICE_PRESIDENT:
+            case MEMBER_LEVEL_VICE_PRESIDENT_SHORT:
+                return "F";
+            case MEMBER_LEVEL_EXECUTIVE_DIRECTOR:
+            case MEMBER_LEVEL_EXECUTIVE_DIRECTOR_SHORT:
+                return "C";
+            case MEMBER_LEVEL_DIRECTOR:
+            case MEMBER_LEVEL_DIRECTOR_SHORT:
+                return "L";
+            case MEMBER_LEVEL_MEMBER:
+            case MEMBER_LEVEL_NORMAL_MEMBER:
+            case MEMBER_LEVEL_NORMAL:
+                return "P";
+            default:
+                throw exception(YW_VIP_APPLY_MEMBER_NO_INVALID);
         }
     }
 

@@ -34,6 +34,8 @@ public class YwCertStudentDO extends BaseDO {
     private String courseHours;
     private String courseProvider;
     private LocalDate certDate;
+    private LocalDate courseDate;
+    private LocalDate stampDate;
     private String stampUnit;
     private String certImageUrl;
     private java.time.LocalDateTime issueTime;

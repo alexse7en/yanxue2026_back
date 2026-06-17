@@ -52,6 +52,8 @@ public class YwCertStudentExcelParser {
                 item.setCourseProvider(getCellValue(row, headerMap, "courseProvider"));
                 item.setStampUnit(getCellValue(row, headerMap, "stampUnit"));
                 item.setCertDate(parseDate(getCell(row, headerMap, "certDate")));
+                item.setCourseDate(parseDate(getCell(row, headerMap, "courseDate")));
+                item.setStampDate(parseDate(getCell(row, headerMap, "stampDate")));
                 if (!StringUtils.hasText(item.getStudentName())) {
                     continue;
                 }
@@ -101,6 +103,8 @@ public class YwCertStudentExcelParser {
         if (containsAny(header, "课程名称", "研学课程", "课程主题", "课程")) return "courseName";
         if (containsAny(header, "学习课时", "课时")) return "courseHours";
         if (containsAny(header, "课程实施方", "实施方")) return "courseProvider";
+        if (containsAny(header, "课程日期", "课程时间", "活动日期", "活动时间", "研学日期")) return "courseDate";
+        if (containsAny(header, "盖章日期", "落章日期", "落章时间")) return "stampDate";
         if (containsAny(header, "落证时间", "证书日期", "发证日期", "日期")) return "certDate";
         if (containsAny(header, "落章单位", "盖章单位", "发证单位")) return "stampUnit";
         return null;

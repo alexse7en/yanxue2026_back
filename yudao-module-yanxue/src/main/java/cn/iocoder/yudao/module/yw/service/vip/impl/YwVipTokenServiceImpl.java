@@ -22,9 +22,14 @@ import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_VIP_TOKEN_R
 public class YwVipTokenServiceImpl implements YwVipTokenService {
 
     private static final String MEMBER_LEVEL_VICE_PRESIDENT = "\u526F\u4F1A\u957F\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_VICE_PRESIDENT_SHORT = "\u526F\u4F1A\u957F";
     private static final String MEMBER_LEVEL_EXECUTIVE_DIRECTOR = "\u5E38\u52A1\u7406\u4E8B\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_EXECUTIVE_DIRECTOR_SHORT = "\u5E38\u52A1\u7406\u4E8B";
     private static final String MEMBER_LEVEL_DIRECTOR = "\u7406\u4E8B\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_DIRECTOR_SHORT = "\u7406\u4E8B";
     private static final String MEMBER_LEVEL_MEMBER = "\u4F1A\u5458\u5355\u4F4D";
+    private static final String MEMBER_LEVEL_NORMAL_MEMBER = "\u666E\u901A\u4F1A\u5458";
+    private static final String MEMBER_LEVEL_NORMAL = "\u666E\u901A";
 
     @Resource
     private YwVipInfoMapper vipInfoMapper;
@@ -75,12 +80,17 @@ public class YwVipTokenServiceImpl implements YwVipTokenService {
         }
         switch (memberLevel.trim()) {
             case MEMBER_LEVEL_VICE_PRESIDENT:
+            case MEMBER_LEVEL_VICE_PRESIDENT_SHORT:
                 return BigDecimal.valueOf(2000L);
             case MEMBER_LEVEL_EXECUTIVE_DIRECTOR:
+            case MEMBER_LEVEL_EXECUTIVE_DIRECTOR_SHORT:
                 return BigDecimal.valueOf(1000L);
             case MEMBER_LEVEL_DIRECTOR:
+            case MEMBER_LEVEL_DIRECTOR_SHORT:
                 return BigDecimal.valueOf(500L);
             case MEMBER_LEVEL_MEMBER:
+            case MEMBER_LEVEL_NORMAL_MEMBER:
+            case MEMBER_LEVEL_NORMAL:
                 return BigDecimal.valueOf(200L);
             default:
                 throw exception(YW_VIP_TOKEN_RULE_NOT_EXISTS);
