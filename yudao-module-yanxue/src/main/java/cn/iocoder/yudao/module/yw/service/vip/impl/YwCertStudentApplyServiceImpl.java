@@ -27,12 +27,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_AUDIT_STATUS_INVALID;
+import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_DETAIL_INVALID;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_NOT_EXISTS;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_PARSE_EMPTY;
 import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_CERT_STUDENT_APPLY_PARSE_FILE_TYPE_INVALID;
@@ -118,6 +121,7 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
             if (details.isEmpty()) {
                 throw exception(YW_CERT_STUDENT_APPLY_PARSE_EMPTY);
             }
+            validateParsedDetails(details);
         } catch (ServiceException ex) {
             batch.setParseStatus(PARSE_STATUS_FAIL);
             batch.setParseError(ex.getMessage());
@@ -163,7 +167,12 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
         if (Objects.equals(batch.getApplyStatus(), APPLY_STATUS_PENDING)) {
             throw exception(YW_CERT_STUDENT_APPLY_SUBMIT_STATUS_INVALID);
         }
-        overwriteDetails(batch.getId(), batch.getUserId(), batch.getVipinfoId(), reqVO.getDetails());
+        if (reqVO.getDetails() != null && !reqVO.getDetails().isEmpty()) {
+            validateSubmitDetails(reqVO.getDetails());
+            overwriteDetails(batch.getId(), batch.getUserId(), batch.getVipinfoId(), reqVO.getDetails());
+        } else {
+            validateParsedDetails(studentApplyMapper.selectListByBatchId(batch.getId()));
+        }
         validateTokenBalance(batch);
         batch.setApplyStatus(APPLY_STATUS_PENDING);
         batch.setDownloadUrl(null);
@@ -239,19 +248,116 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
             detail.setApplyBatchId(batchId);
             detail.setUserId(userId);
             detail.setVipinfoId(vipinfoId);
-            detail.setStudentName(item.getStudentName());
-            detail.setIdCard(item.getIdCard());
-            detail.setSchoolName(item.getSchoolName());
-            detail.setClassName(item.getClassName());
-            detail.setCourseName(item.getCourseName());
-            detail.setCourseHours(item.getCourseHours());
-            detail.setCourseProvider(item.getCourseProvider());
+            detail.setStudentName(trimToNull(item.getStudentName()));
+            detail.setIdCard(trimToNull(item.getIdCard()).toUpperCase());
+            detail.setSchoolName(trimToNull(item.getSchoolName()));
+            detail.setClassName(trimToNull(item.getClassName()));
+            detail.setCourseName(trimToNull(item.getCourseName()));
+            detail.setCourseHours(trimToNull(item.getCourseHours()));
+            detail.setCourseProvider(trimToNull(item.getCourseProvider()));
             detail.setCertDate(item.getCertDate());
             detail.setCourseDate(item.getCourseDate());
             detail.setStampDate(item.getStampDate());
-            detail.setStampUnit(item.getStampUnit());
+            detail.setStampUnit(trimToNull(item.getStampUnit()));
             studentApplyMapper.insert(detail);
         }
+    }
+
+    private void validateParsedDetails(List<YwStudentApplyDO> details) {
+        if (details == null || details.isEmpty()) {
+            throw exception(YW_CERT_STUDENT_APPLY_PARSE_EMPTY);
+        }
+        for (int i = 0; i < details.size(); i++) {
+            YwStudentApplyDO detail = details.get(i);
+            String rowPrefix = "第" + (i + 1) + "条学生证书明细：";
+            requireText(detail.getStudentName(), rowPrefix + "学生姓名不能为空");
+            validateIdCard(detail.getIdCard(), rowPrefix);
+            requireDate(resolveCourseDate(detail.getCourseDate(), detail.getCertDate()), rowPrefix + "课程日期不能为空");
+            requireText(detail.getCourseName(), rowPrefix + "课程名称不能为空");
+            requireText(detail.getCourseHours(), rowPrefix + "课时不能为空");
+            requireText(detail.getCourseProvider(), rowPrefix + "课程提供单位不能为空");
+            requireDate(resolveStampDate(detail.getStampDate(), detail.getCertDate()), rowPrefix + "落款日期不能为空");
+            detail.setStudentName(trimToNull(detail.getStudentName()));
+            detail.setIdCard(trimToNull(detail.getIdCard()).toUpperCase());
+            detail.setSchoolName(trimToNull(detail.getSchoolName()));
+            detail.setClassName(trimToNull(detail.getClassName()));
+            detail.setCourseName(trimToNull(detail.getCourseName()));
+            detail.setCourseHours(trimToNull(detail.getCourseHours()));
+            detail.setCourseProvider(trimToNull(detail.getCourseProvider()));
+            detail.setStampUnit(trimToNull(detail.getStampUnit()));
+        }
+    }
+
+    private void validateSubmitDetails(List<YwStudentApplyDetailSaveReqVO> details) {
+        for (int i = 0; i < details.size(); i++) {
+            YwStudentApplyDetailSaveReqVO detail = details.get(i);
+            String rowPrefix = "第" + (i + 1) + "条学生证书明细：";
+            requireText(detail.getStudentName(), rowPrefix + "学生姓名不能为空");
+            validateIdCard(detail.getIdCard(), rowPrefix);
+            requireDate(resolveCourseDate(detail.getCourseDate(), detail.getCertDate()), rowPrefix + "课程日期不能为空");
+            requireText(detail.getCourseName(), rowPrefix + "课程名称不能为空");
+            requireText(detail.getCourseHours(), rowPrefix + "课时不能为空");
+            requireText(detail.getCourseProvider(), rowPrefix + "课程提供单位不能为空");
+            requireDate(resolveStampDate(detail.getStampDate(), detail.getCertDate()), rowPrefix + "落款日期不能为空");
+        }
+    }
+
+    private LocalDate resolveCourseDate(LocalDate courseDate, LocalDate certDate) {
+        return courseDate != null ? courseDate : certDate;
+    }
+
+    private LocalDate resolveStampDate(LocalDate stampDate, LocalDate certDate) {
+        return stampDate != null ? stampDate : certDate;
+    }
+
+    private void requireText(String value, String message) {
+        if (!StringUtils.hasText(value)) {
+            throwDetailInvalid(message);
+        }
+    }
+
+    private void requireDate(LocalDate value, String message) {
+        if (value == null) {
+            throwDetailInvalid(message);
+        }
+    }
+
+    private void validateIdCard(String idCard, String rowPrefix) {
+        requireText(idCard, rowPrefix + "身份证不能为空");
+        if (!isValidIdCard(idCard)) {
+            throwDetailInvalid(rowPrefix + "身份证号码格式不正确");
+        }
+    }
+
+    private boolean isValidIdCard(String idCard) {
+        String text = idCard.trim().toUpperCase();
+        if (!text.matches("\\d{17}[0-9X]")) {
+            return false;
+        }
+        try {
+            LocalDate birthday = LocalDate.of(Integer.parseInt(text.substring(6, 10)),
+                    Integer.parseInt(text.substring(10, 12)), Integer.parseInt(text.substring(12, 14)));
+            if (birthday.isBefore(LocalDate.of(1900, 1, 1)) || birthday.isAfter(LocalDate.now())) {
+                return false;
+            }
+        } catch (DateTimeException | NumberFormatException ex) {
+            return false;
+        }
+        int[] weights = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+        char[] checks = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
+        int sum = 0;
+        for (int i = 0; i < weights.length; i++) {
+            sum += (text.charAt(i) - '0') * weights[i];
+        }
+        return checks[sum % 11] == text.charAt(17);
+    }
+
+    private String trimToNull(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private void throwDetailInvalid(String message) {
+        throw new ServiceException(YW_CERT_STUDENT_APPLY_DETAIL_INVALID.getCode(), message);
     }
 
     private void saveParsedBatch(YwStudentApplyBatchDO batch, boolean isNewBatch) {

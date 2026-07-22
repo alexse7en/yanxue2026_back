@@ -71,6 +71,7 @@ public interface ErrorCodeConstants {
     ErrorCode YW_CERT_STUDENT_APPLY_AUDIT_STATUS_INVALID = new ErrorCode(102508, "学生证书申请审核状态非法");
     ErrorCode YW_CERT_STUDENT_APPLY_STATUS_NOT_PENDING = new ErrorCode(102509, "仅待审核的学生证书申请可审核");
     ErrorCode YW_VIP_TOKEN_RULE_NOT_EXISTS = new ErrorCode(102510, "当前会员等级未配置证书生成次数规则");
+    ErrorCode YW_CERT_STUDENT_APPLY_DETAIL_INVALID = new ErrorCode(102511, "学生证书申请明细校验失败");
 
     ErrorCode YW_INDUSTRY_SURVEY_NOT_EXISTS = new ErrorCode(102601, "行业研究问卷不存在");
     ErrorCode YW_INDUSTRY_SURVEY_STATUS_SUBMITTED = new ErrorCode(102602, "该类型行业研究问卷已提交，不可重复提交或修改");

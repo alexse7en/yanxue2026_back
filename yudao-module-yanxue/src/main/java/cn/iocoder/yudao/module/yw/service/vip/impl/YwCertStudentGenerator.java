@@ -20,11 +20,13 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
@@ -54,6 +56,7 @@ import static cn.iocoder.yudao.module.yw.enums.ErrorCodeConstants.YW_VIPINFO_NOT
 public class YwCertStudentGenerator {
 
     private static final String FULL_WIDTH_INDENT = "　　";
+    private static final String STAMP_UNIT = "广东省研学旅行协会";
     public static final int GENERATE_STATUS_NONE = 0;
     public static final int GENERATE_STATUS_RUNNING = 1;
     public static final int GENERATE_STATUS_SUCCESS = 2;
@@ -191,7 +194,7 @@ public class YwCertStudentGenerator {
                 cert.setCertDate(detail.getCertDate());
                 cert.setCourseDate(resolveCourseDate(detail));
                 cert.setStampDate(resolveStampDate(detail));
-                cert.setStampUnit(detail.getStampUnit());
+                cert.setStampUnit(STAMP_UNIT);
                 cert.setCertImageUrl(certPath);
                 cert.setIssueTime(LocalDateTime.now());
                 certStudentMapper.insert(cert);
@@ -235,27 +238,29 @@ public class YwCertStudentGenerator {
             int height = template.getHeight();
 
             g.setColor(new Color(45, 45, 45));
-            int bodyFontSize = Math.max(20, width / 48);
+            int bodyFontSize = Math.max(28, width / 39);
             Font plainFont = buildFont(Font.PLAIN, bodyFontSize);
             Font boldFont = buildFont(Font.BOLD, bodyFontSize);
             List<List<TextSegment>> paragraphs = buildBodyParagraphs(detail);
-            int lineHeight = Math.max(34, bodyFontSize + 10);
+            int lineHeight = Math.max(60, bodyFontSize + 34);
             drawStyledParagraphs(g, paragraphs, plainFont, boldFont,
-                    (int) (width * 0.17), (int) (height * 0.47), (int) (width * 0.54), lineHeight, 18);
+                    (int) (width * 0.16), (int) (height * 0.43), (int) (width * 0.70), lineHeight, 28);
 
             g.setFont(buildFont(Font.PLAIN, Math.max(16, width / 60)));
             g.drawString("证书编号：" + certNo, (int) (width * 0.12), (int) (height * 0.78));
 
-            g.setFont(buildFont(Font.PLAIN, Math.max(16, width / 68)));
-            String stampUnit = StringUtils.hasText(detail.getStampUnit()) ? detail.getStampUnit() : detail.getCourseProvider();
-            if (StringUtils.hasText(stampUnit)) {
-                drawCentered(g, stampUnit, (int) (width * 0.76), height * 0.75);
-            }
+            g.setFont(buildFont(Font.BOLD, Math.max(18, width / 70)));
+            drawCentered(g, STAMP_UNIT, (int) (width * 0.765), height * 0.765);
             LocalDate stampDate = resolveStampDate(detail);
             if (stampDate != null) {
-                drawCentered(g, stampDate.format(DateTimeFormatter.ofPattern("yyyy年M月d日")), (int) (width * 0.76), height * 0.79);
+                g.setFont(buildFont(Font.BOLD, Math.max(16, width / 76)));
+                drawCentered(g, stampDate.format(DateTimeFormatter.ofPattern("yyyy年M月d日")), (int) (width * 0.765), height * 0.805);
             }
-            g.drawImage(seal, (int) (width * 0.685), (int) (height * 0.64), (int) (width * 0.14), (int) (width * 0.14), null);
+            int sealOldSize = (int) (width * 0.14);
+            int sealSize = (int) (sealOldSize * 0.9);
+            int sealX = (int) (width * 0.70) + (sealOldSize - sealSize) / 2;
+            int sealY = (int) (height * 0.665) + (sealOldSize - sealSize) / 2;
+            g.drawImage(seal, sealX, sealY, sealSize, sealSize, null);
         } finally {
             g.dispose();
         }
@@ -307,8 +312,14 @@ public class YwCertStudentGenerator {
             g.drawString(segment.text, currentX, baselineY);
             int textWidth = g.getFontMetrics(font).stringWidth(segment.text);
             if (segment.underline) {
-                int underlineY = baselineY + 4;
+                Color oldColor = g.getColor();
+                Stroke oldStroke = g.getStroke();
+                int underlineY = baselineY + 5;
+                g.setColor(new Color(20, 20, 20));
+                g.setStroke(new BasicStroke(Math.max(2F, font.getSize2D() / 18F)));
                 g.drawLine(currentX, underlineY, currentX + textWidth, underlineY);
+                g.setStroke(oldStroke);
+                g.setColor(oldColor);
             }
             currentX += textWidth;
         }
@@ -379,12 +390,22 @@ public class YwCertStudentGenerator {
         List<TextSegment> first = new ArrayList<>();
         first.add(new TextSegment(FULL_WIDTH_INDENT + "兹有 ", false, false));
         first.add(new TextSegment(defaultText(detail.getStudentName(), "学生"), true, true));
-        first.add(new TextSegment("，", false, false));
-        first.add(new TextSegment(defaultText(detail.getSchoolName(), "学校"), true, true));
-        first.add(new TextSegment(" 学生，于", false, false));
+        if (StringUtils.hasText(detail.getSchoolName()) || StringUtils.hasText(detail.getClassName())) {
+            first.add(new TextSegment("，", false, false));
+            if (StringUtils.hasText(detail.getSchoolName())) {
+                first.add(new TextSegment(detail.getSchoolName(), true, true));
+            }
+            if (StringUtils.hasText(detail.getClassName())) {
+                if (StringUtils.hasText(detail.getSchoolName())) {
+                    first.add(new TextSegment(" ", false, false));
+                }
+                first.add(new TextSegment(detail.getClassName(), true, true));
+            }
+        }
+        first.add(new TextSegment("学生，于", false, false));
         first.add(new TextSegment(formatCourseDate(detail), true, true));
-        first.add(new TextSegment(" 参加研学认定课程", false, false));
-        first.add(new TextSegment(defaultText(detail.getCourseName(), "研学课程"), true, true));
+        first.add(new TextSegment("参加研学认证课程", false, false));
+        first.add(new TextSegment(formatCourseName(detail.getCourseName()), true, true));
         first.add(new TextSegment(" 实践活动，", false, false));
         first.add(new TextSegment("共计", false, false));
         first.add(new TextSegment(defaultText(detail.getCourseHours(), "0"), true, true));
@@ -504,6 +525,14 @@ public class YwCertStudentGenerator {
 
     private String formatCourseDate(YwStudentApplyDO detail) {
         return formatCertDate(resolveCourseDate(detail));
+    }
+
+    private String formatCourseName(String courseName) {
+        String text = defaultText(courseName, "研学课程");
+        if (text.startsWith("《") && text.endsWith("》")) {
+            return text;
+        }
+        return "《" + text + "》";
     }
 
     private LocalDate resolveCourseDate(YwStudentApplyDO detail) {
