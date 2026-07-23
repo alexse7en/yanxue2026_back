@@ -242,9 +242,9 @@ public class YwCertStudentGenerator {
             Font plainFont = buildFont(Font.PLAIN, bodyFontSize);
             Font boldFont = buildFont(Font.BOLD, bodyFontSize);
             List<List<TextSegment>> paragraphs = buildBodyParagraphs(detail);
-            int lineHeight = Math.max(60, bodyFontSize + 34);
+            int lineHeight = Math.max(60, bodyFontSize + 34) + 28;
             drawStyledParagraphs(g, paragraphs, plainFont, boldFont,
-                    (int) (width * 0.16), (int) (height * 0.43), (int) (width * 0.70), lineHeight, 28);
+                    (int) (width * 0.16), (int) (height * 0.43), (int) (width * 0.70), lineHeight, 0);
 
             g.setFont(buildFont(Font.PLAIN, Math.max(16, width / 60)));
             g.drawString("证书编号：" + certNo, (int) (width * 0.12), (int) (height * 0.78));
