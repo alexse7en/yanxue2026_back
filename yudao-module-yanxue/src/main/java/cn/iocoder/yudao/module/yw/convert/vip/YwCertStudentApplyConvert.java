@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.yw.dal.dataobject.vip.YwStudentApplyDO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwStudentApplyDetailRespVO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -15,8 +16,11 @@ public interface YwCertStudentApplyConvert {
 
     YwCertStudentApplyConvert INSTANCE = Mappers.getMapper(YwCertStudentApplyConvert.class);
 
+    @Mapping(target = "validationErrorCount", ignore = true)
     YwCertStudentApplyRespVO convert(YwStudentApplyBatchDO bean);
 
+    @Mapping(target = "valid", ignore = true)
+    @Mapping(target = "fieldErrors", ignore = true)
     YwStudentApplyDetailRespVO convertDetail(YwStudentApplyDO bean);
 
     List<YwCertStudentApplyRespVO> convertList(List<YwStudentApplyBatchDO> list);

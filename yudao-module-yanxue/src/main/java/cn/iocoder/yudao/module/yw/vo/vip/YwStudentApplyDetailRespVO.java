@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.yw.vo.vip;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 @Data
 public class YwStudentApplyDetailRespVO {
@@ -19,4 +20,6 @@ public class YwStudentApplyDetailRespVO {
     private LocalDate courseDate;
     private LocalDate stampDate;
     private String stampUnit;
+    private Boolean valid;
+    private Map<String, String> fieldErrors;
 }

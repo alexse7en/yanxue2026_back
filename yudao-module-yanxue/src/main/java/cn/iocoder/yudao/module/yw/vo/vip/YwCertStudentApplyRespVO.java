@@ -18,6 +18,7 @@ public class YwCertStudentApplyRespVO {
     private Integer parseStatus;
     private String parseError;
     private Integer parseCount;
+    private Integer validationErrorCount;
     private String downloadUrl;
     private Integer generateStatus;
     private String generateError;

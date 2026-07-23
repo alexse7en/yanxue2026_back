@@ -53,10 +53,10 @@ public class YwCertStudentExcelParser {
                 LocalDate certDate = parseDate(getCell(row, headerMap, "certDate"));
                 LocalDate courseDate = parseDate(getCell(row, headerMap, "courseDate"));
                 LocalDate stampDate = parseDate(getCell(row, headerMap, "stampDate"));
-                item.setCourseDate(courseDate != null ? courseDate : certDate);
-                item.setStampDate(stampDate != null ? stampDate : certDate);
-                item.setCertDate(item.getStampDate() != null ? item.getStampDate() : item.getCourseDate());
-                if (!StringUtils.hasText(item.getStudentName())) {
+                item.setCertDate(certDate);
+                item.setCourseDate(courseDate);
+                item.setStampDate(stampDate);
+                if (isEmptyDetail(item)) {
                     continue;
                 }
                 result.add(item);
@@ -190,6 +190,20 @@ public class YwCertStudentExcelParser {
             }
         }
         return true;
+    }
+
+    private boolean isEmptyDetail(YwStudentApplyDO item) {
+        return !StringUtils.hasText(item.getStudentName())
+                && !StringUtils.hasText(item.getIdCard())
+                && !StringUtils.hasText(item.getSchoolName())
+                && !StringUtils.hasText(item.getClassName())
+                && !StringUtils.hasText(item.getCourseName())
+                && !StringUtils.hasText(item.getCourseHours())
+                && !StringUtils.hasText(item.getCourseProvider())
+                && !StringUtils.hasText(item.getStampUnit())
+                && item.getCertDate() == null
+                && item.getCourseDate() == null
+                && item.getStampDate() == null;
     }
 
     private InputStream openStream(String filePath) throws Exception {
