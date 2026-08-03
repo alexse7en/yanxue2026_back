@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.io.InputStream;
 
 /**
  * 文件 API 实现类
@@ -21,6 +22,11 @@ public class FileApiImpl implements FileApi {
     @Override
     public String createFile(byte[] content, String name, String directory, String type) {
         return fileService.createFile(content, name, directory, type);
+    }
+
+    @Override
+    public String createFile(InputStream content, long contentLength, String name, String directory, String type) {
+        return fileService.createFile(content, contentLength, name, directory, type);
     }
 
 }

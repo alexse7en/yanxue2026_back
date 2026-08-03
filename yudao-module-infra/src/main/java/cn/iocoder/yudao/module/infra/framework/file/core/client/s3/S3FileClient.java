@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.net.URI;
+import java.io.InputStream;
 import java.time.Duration;
 
 /**
@@ -75,6 +76,18 @@ public class S3FileClient extends AbstractFileClient<S3FileClientConfig> {
         // 上传文件
         client.putObject(putRequest, RequestBody.fromBytes(content));
         // 拼接返回路径
+        return config.getDomain() + "/" + path;
+    }
+
+    @Override
+    public String upload(InputStream content, long contentLength, String path, String type) {
+        PutObjectRequest putRequest = PutObjectRequest.builder()
+                .bucket(config.getBucket())
+                .key(path)
+                .contentType(type)
+                .contentLength(contentLength)
+                .build();
+        client.putObject(putRequest, RequestBody.fromInputStream(content, contentLength));
         return config.getDomain() + "/" + path;
     }
 

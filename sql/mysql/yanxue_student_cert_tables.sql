@@ -10,6 +10,8 @@ CREATE TABLE `yw_yanxue_student_apply_batch` (
     `parse_error` varchar(500) DEFAULT NULL COMMENT '解析失败信息',
     `parse_count` int(11) DEFAULT '0' COMMENT '解析出的学生数量',
     `download_url` varchar(500) DEFAULT NULL COMMENT '审核通过后批量下载ZIP地址',
+    `generate_status` tinyint(4) DEFAULT '0' COMMENT '生成状态：0-未生成 1-生成中 2-生成成功 3-生成失败',
+    `generate_error` varchar(500) DEFAULT NULL COMMENT '生成失败信息',
     `audit_remark` varchar(500) DEFAULT NULL COMMENT '审核备注/拒绝原因',
     `audit_time` datetime DEFAULT NULL COMMENT '审核时间',
     `auditor_id` bigint(20) DEFAULT NULL COMMENT '审核人ID',
@@ -21,7 +23,8 @@ CREATE TABLE `yw_yanxue_student_apply_batch` (
     UNIQUE KEY `uk_apply_no` (`apply_no`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_vipinfo_id` (`vipinfo_id`),
-    KEY `idx_apply_status` (`apply_status`)
+    KEY `idx_apply_status` (`apply_status`),
+    KEY `idx_generate_status` (`generate_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生证书申请批次表（上传Excel后形成一批待审核数据）';
 
 CREATE TABLE `yw_yanxue_student_apply` (

@@ -20,6 +20,7 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.InputStream;
 import java.util.List;
 
 import static cn.hutool.core.date.DatePattern.PURE_DATE_PATTERN;
@@ -89,6 +90,21 @@ public class FileServiceImpl implements FileService {
         fileMapper.insert(new FileDO().setConfigId(client.getId())
                 .setName(name).setPath(path).setUrl(url)
                 .setType(type).setSize(content.length));
+        return url;
+    }
+
+    @Override
+    @SneakyThrows
+    public String createFile(InputStream content, long contentLength, String name, String directory, String type) {
+        Assert.notBlank(name, "文件名称不能为空");
+        Assert.notBlank(type, "文件类型不能为空");
+        String path = generateUploadPath(name, directory);
+        FileClient client = fileConfigService.getMasterFileClient();
+        Assert.notNull(client, "客户端(master) 不能为空");
+        String url = client.upload(content, contentLength, path, type);
+        fileMapper.insert(new FileDO().setConfigId(client.getId())
+                .setName(name).setPath(path).setUrl(url)
+                .setType(type).setSize(Math.toIntExact(contentLength)));
         return url;
     }
 

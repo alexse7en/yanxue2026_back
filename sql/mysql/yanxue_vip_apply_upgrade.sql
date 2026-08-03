@@ -38,3 +38,8 @@ CREATE TABLE IF NOT EXISTS `yw_yanxue_orginfo_apply` (
     KEY `idx_orginfo_id` (`orginfo_id`),
     KEY `idx_apply_status` (`apply_status`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='二级认证信息编辑申请表';
+
+-- 4) 学生证书申请批次增加异步生成状态
+ALTER TABLE `yw_yanxue_student_apply_batch`
+    ADD COLUMN IF NOT EXISTS `generate_status` tinyint(4) DEFAULT '0' COMMENT '生成状态：0-未生成 1-生成中 2-生成成功 3-生成失败',
+    ADD COLUMN IF NOT EXISTS `generate_error` varchar(500) DEFAULT NULL COMMENT '生成失败信息';

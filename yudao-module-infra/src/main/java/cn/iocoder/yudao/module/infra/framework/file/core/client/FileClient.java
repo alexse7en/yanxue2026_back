@@ -1,6 +1,9 @@
 package cn.iocoder.yudao.module.infra.framework.file.core.client;
 
 import cn.iocoder.yudao.module.infra.framework.file.core.client.s3.FilePresignedUrlRespDTO;
+import cn.hutool.core.io.IoUtil;
+
+import java.io.InputStream;
 
 /**
  * 文件客户端
@@ -25,6 +28,13 @@ public interface FileClient {
      * @throws Exception 上传文件时，抛出 Exception 异常
      */
     String upload(byte[] content, String path, String type) throws Exception;
+
+    /**
+     * 流式上传文件。大文件客户端应覆盖该方法，避免一次性加载到 JVM 堆内存。
+     */
+    default String upload(InputStream content, long contentLength, String path, String type) throws Exception {
+        return upload(IoUtil.readBytes(content), path, type);
+    }
 
     /**
      * 删除文件

@@ -1,6 +1,9 @@
 package cn.iocoder.yudao.module.infra.api.file;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import java.io.InputStream;
 
 /**
  * 文件 API 接口
@@ -41,5 +44,14 @@ public interface FileApi {
      */
     String createFile(@NotEmpty(message = "文件内容不能为空") byte[] content,
                       String name, String directory, String type);
+
+    /**
+     * 流式保存大文件，并返回文件访问路径。
+     */
+    String createFile(@NotNull(message = "文件流不能为空") InputStream content,
+                      @Positive(message = "文件大小必须大于 0") long contentLength,
+                      @NotEmpty(message = "文件名称不能为空") String name,
+                      String directory,
+                      @NotEmpty(message = "文件类型不能为空") String type);
 
 }

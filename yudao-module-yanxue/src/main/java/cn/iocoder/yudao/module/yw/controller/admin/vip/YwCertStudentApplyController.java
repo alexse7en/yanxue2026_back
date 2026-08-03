@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyPageReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyParseReqVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplyRespVO;
 import cn.iocoder.yudao.module.yw.vo.vip.YwCertStudentApplySubmitReqVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwStudentApplyDetailPageReqVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwStudentApplyDetailRespVO;
+import cn.iocoder.yudao.module.yw.vo.vip.YwStudentApplyDetailUpdateReqVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,6 +63,20 @@ public class YwCertStudentApplyController {
         return success(certStudentApplyService.getApplyForAudit(id));
     }
 
+    @GetMapping("/detail-page")
+    @Operation(summary = "分页查询当前用户的学生证书申请明细")
+    public CommonResult<PageResult<YwStudentApplyDetailRespVO>> detailPage(
+            @Valid YwStudentApplyDetailPageReqVO reqVO) {
+        return success(certStudentApplyService.getDetailPage(reqVO));
+    }
+
+    @GetMapping("/detail-page-audit")
+    @Operation(summary = "管理员分页查询学生证书申请明细")
+    public CommonResult<PageResult<YwStudentApplyDetailRespVO>> detailPageAudit(
+            @Valid YwStudentApplyDetailPageReqVO reqVO) {
+        return success(certStudentApplyService.getDetailPageForAudit(reqVO));
+    }
+
     @PostMapping("/parse")
     @Operation(summary = "解析上传的学生证书 Excel")
     public CommonResult<YwCertStudentApplyRespVO> parse(@Valid @RequestBody YwCertStudentApplyParseReqVO reqVO) {
@@ -70,6 +87,13 @@ public class YwCertStudentApplyController {
     @Operation(summary = "提交学生证书生成申请")
     public CommonResult<Long> submit(@Valid @RequestBody YwCertStudentApplySubmitReqVO reqVO) {
         return success(certStudentApplyService.submitApply(reqVO));
+    }
+
+    @PostMapping("/update-details")
+    @Operation(summary = "保存当前用户修正的学生证书申请明细")
+    public CommonResult<Boolean> updateDetails(@Valid @RequestBody YwStudentApplyDetailUpdateReqVO reqVO) {
+        certStudentApplyService.updateDetails(reqVO);
+        return success(true);
     }
 
     @PostMapping("/audit")

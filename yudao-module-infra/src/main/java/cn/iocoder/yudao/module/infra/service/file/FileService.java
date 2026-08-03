@@ -8,6 +8,7 @@ import cn.iocoder.yudao.module.infra.dal.dataobject.file.FileDO;
 import javax.validation.constraints.NotEmpty;
 
 import java.util.List;
+import java.io.InputStream;
 
 /**
  * 文件 Service 接口
@@ -35,6 +36,8 @@ public interface FileService {
      */
     String createFile(@NotEmpty(message = "文件内容不能为空") byte[] content,
                       String name, String directory, String type);
+
+    String createFile(InputStream content, long contentLength, String name, String directory, String type);
 
     /**
      * 生成文件预签名地址信息

@@ -17,6 +17,7 @@ public interface YwCertStudentApplyConvert {
     YwCertStudentApplyConvert INSTANCE = Mappers.getMapper(YwCertStudentApplyConvert.class);
 
     @Mapping(target = "validationErrorCount", ignore = true)
+    @Mapping(target = "details", ignore = true)
     YwCertStudentApplyRespVO convert(YwStudentApplyBatchDO bean);
 
     @Mapping(target = "valid", ignore = true)

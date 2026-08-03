@@ -33,16 +33,20 @@ import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -117,18 +121,25 @@ public class YwCertStudentGenerator {
         }
     }
 
-    @Async
+    @Async("certStudentTaskExecutor")
     public void generateAsync(Long batchId) {
         try {
             generate(batchId);
-        } catch (Exception e) {
-            YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectById(batchId);
-            if (batch != null) {
-                batch.setGenerateStatus(GENERATE_STATUS_FAIL);
-                batch.setGenerateError(limitMsg(e.getMessage()));
-                studentApplyBatchMapper.updateById(batch);
+        } catch (Throwable e) {
+            try {
+                YwStudentApplyBatchDO batch = studentApplyBatchMapper.selectById(batchId);
+                if (batch != null) {
+                    batch.setGenerateStatus(GENERATE_STATUS_FAIL);
+                    batch.setGenerateError(limitMsg(e.getMessage()));
+                    studentApplyBatchMapper.updateById(batch);
+                }
+            } catch (Throwable updateError) {
+                log.error("[generateAsync][学生证书生成失败状态回写失败，batchId={}]", batchId, updateError);
             }
             log.error("[generateAsync][学生证书生成失败，batchId={}]", batchId, e);
+            if (e instanceof Error) {
+                throw (Error) e;
+            }
         }
     }
 
@@ -171,43 +182,59 @@ public class YwCertStudentGenerator {
 
         int certYear = Year.now().getValue();
         int nextNo = resolveNextNo(certYear);
-        ByteArrayOutputStream zipBuffer = new ByteArrayOutputStream();
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(zipBuffer, StandardCharsets.UTF_8)) {
-            for (YwStudentApplyDO detail : details) {
-                String certNo = buildCertNo(certYear, nextNo++);
-                byte[] certBytes = renderCertImage(detail, certNo);
-                String fileExtension = getImageFileExtension();
-                String certPath = fileApi.createFile(certBytes, certNo + "." + fileExtension, "yw/cert/student", getImageMimeType());
-                YwCertStudentDO cert = new YwCertStudentDO();
-                cert.setApplyDetailId(detail.getId());
-                cert.setUserId(detail.getUserId());
-                cert.setVipinfoId(detail.getVipinfoId());
-                cert.setCertYear(certYear);
-                cert.setCertNo(certNo);
-                cert.setStudentName(detail.getStudentName());
-                cert.setIdCard(detail.getIdCard());
-                cert.setSchoolName(detail.getSchoolName());
-                cert.setClassName(detail.getClassName());
-                cert.setCourseName(detail.getCourseName());
-                cert.setCourseHours(detail.getCourseHours());
-                cert.setCourseProvider(detail.getCourseProvider());
-                cert.setCertDate(detail.getCertDate());
-                cert.setCourseDate(resolveCourseDate(detail));
-                cert.setStampDate(resolveStampDate(detail));
-                cert.setStampUnit(STAMP_UNIT);
-                cert.setCertImageUrl(certPath);
-                cert.setIssueTime(LocalDateTime.now());
-                certStudentMapper.insert(cert);
+        Path zipPath = null;
+        try {
+            zipPath = Files.createTempFile("student-cert-" + batchId + "-", ".zip");
+            try (OutputStream fileOutputStream = Files.newOutputStream(zipPath);
+                 ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream, StandardCharsets.UTF_8)) {
+                zipOutputStream.setLevel(Deflater.NO_COMPRESSION);
+                for (YwStudentApplyDO detail : details) {
+                    String certNo = buildCertNo(certYear, nextNo++);
+                    byte[] certBytes = renderCertImage(detail, certNo);
+                    String fileExtension = getImageFileExtension();
+                    String certPath = fileApi.createFile(certBytes, certNo + "." + fileExtension, "yw/cert/student", getImageMimeType());
+                    YwCertStudentDO cert = new YwCertStudentDO();
+                    cert.setApplyDetailId(detail.getId());
+                    cert.setUserId(detail.getUserId());
+                    cert.setVipinfoId(detail.getVipinfoId());
+                    cert.setCertYear(certYear);
+                    cert.setCertNo(certNo);
+                    cert.setStudentName(detail.getStudentName());
+                    cert.setIdCard(detail.getIdCard());
+                    cert.setSchoolName(detail.getSchoolName());
+                    cert.setClassName(detail.getClassName());
+                    cert.setCourseName(detail.getCourseName());
+                    cert.setCourseHours(detail.getCourseHours());
+                    cert.setCourseProvider(detail.getCourseProvider());
+                    cert.setCertDate(detail.getCertDate());
+                    cert.setCourseDate(resolveCourseDate(detail));
+                    cert.setStampDate(resolveStampDate(detail));
+                    cert.setStampUnit(STAMP_UNIT);
+                    cert.setCertImageUrl(certPath);
+                    cert.setIssueTime(LocalDateTime.now());
+                    certStudentMapper.insert(cert);
 
-                zipOutputStream.putNextEntry(new ZipEntry(certNo + "-" + safeName(detail.getStudentName()) + "." + fileExtension));
-                zipOutputStream.write(certBytes);
-                zipOutputStream.closeEntry();
+                    zipOutputStream.putNextEntry(new ZipEntry(certNo + "-" + safeName(detail.getStudentName()) + "." + fileExtension));
+                    zipOutputStream.write(certBytes);
+                    zipOutputStream.closeEntry();
+                }
+            }
+            try (InputStream zipInputStream = Files.newInputStream(zipPath)) {
+                String downloadUrl = fileApi.createFile(zipInputStream, Files.size(zipPath),
+                        batch.getApplyNo() + ".zip", "yw/cert/student", "application/zip");
+                batch.setDownloadUrl(downloadUrl);
             }
         } catch (Exception e) {
             throw new RuntimeException(limitMsg(e.getMessage()), e);
+        } finally {
+            if (zipPath != null) {
+                try {
+                    Files.deleteIfExists(zipPath);
+                } catch (Exception e) {
+                    log.warn("[generate][删除学生证书临时压缩包失败，batchId={}，path={}]", batchId, zipPath, e);
+                }
+            }
         }
-        String downloadUrl = fileApi.createFile(zipBuffer.toByteArray(), batch.getApplyNo() + ".zip", "yw/cert/student", "application/zip");
-        batch.setDownloadUrl(downloadUrl);
         batch.setGenerateStatus(GENERATE_STATUS_SUCCESS);
         batch.setGenerateError(null);
         studentApplyBatchMapper.updateById(batch);

@@ -16,6 +16,10 @@ public interface YwStudentApplyMapper extends BaseMapperX<YwStudentApplyDO> {
                 .orderByAsc(YwStudentApplyDO::getId));
     }
 
+    default Long selectCountByBatchId(Long batchId) {
+        return selectCount(YwStudentApplyDO::getApplyBatchId, batchId);
+    }
+
     default void deleteByBatchId(Long batchId) {
         delete(new LambdaQueryWrapperX<YwStudentApplyDO>()
                 .eq(YwStudentApplyDO::getApplyBatchId, batchId));
