@@ -241,12 +241,8 @@ public class YwCertStudentGenerator {
     }
 
     private int resolveNextNo(int certYear) {
-        YwCertStudentDO latest = certStudentMapper.selectLatestByYear(certYear);
-        if (latest == null || !StringUtils.hasText(latest.getCertNo())) {
-            return 1;
-        }
-        String certNo = latest.getCertNo();
-        return Integer.parseInt(certNo.substring(("CCPST" + certYear).length())) + 1;
+        Integer maxSequence = certStudentMapper.selectMaxSequenceByYearIncludingDeleted(certYear);
+        return (maxSequence == null ? 0 : maxSequence) + 1;
     }
 
     private String buildCertNo(int certYear, int no) {

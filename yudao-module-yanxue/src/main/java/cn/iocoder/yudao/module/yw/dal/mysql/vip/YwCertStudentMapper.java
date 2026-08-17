@@ -25,12 +25,16 @@ public interface YwCertStudentMapper extends BaseMapperX<YwCertStudentDO> {
                 .in(YwCertStudentDO::getApplyDetailId, applyDetailIds));
     }
 
-    default YwCertStudentDO selectLatestByYear(Integer certYear) {
-        return selectOne(new LambdaQueryWrapperX<YwCertStudentDO>()
-                .eq(YwCertStudentDO::getCertYear, certYear)
-                .orderByDesc(YwCertStudentDO::getCertNo)
-                .last("limit 1"));
-    }
+    /**
+     * 查询指定年度已使用的最大流水号，包含逻辑删除记录。
+     *
+     * cert_no 的唯一索引不会忽略 deleted = 1 的记录，因此编号不能复用。
+     */
+    @Select("SELECT COALESCE(MAX(CAST(SUBSTRING(cert_no, 10) AS UNSIGNED)), 0) " +
+            "FROM yw_yanxue_cert_student " +
+            "WHERE cert_year = #{certYear} " +
+            "AND cert_no LIKE CONCAT('CCPST', #{certYear}, '%')")
+    Integer selectMaxSequenceByYearIncludingDeleted(@Param("certYear") Integer certYear);
 
     @Select("<script>" +
             "SELECT id, " +
