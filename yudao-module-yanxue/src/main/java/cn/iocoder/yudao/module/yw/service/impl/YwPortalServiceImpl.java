@@ -140,7 +140,7 @@ public class YwPortalServiceImpl implements YwPortalService {
             reqVO.setName(reqVO.getName().trim());
         }
         if (StringUtils.hasText(reqVO.getIdCardSuffix())) {
-            reqVO.setIdCardSuffix(reqVO.getIdCardSuffix().trim());
+            reqVO.setIdCardSuffix(reqVO.getIdCardSuffix().trim().toUpperCase());
         }
         if (StringUtils.hasText(reqVO.getCertNo())) {
             reqVO.setCertNo(reqVO.getCertNo().trim());

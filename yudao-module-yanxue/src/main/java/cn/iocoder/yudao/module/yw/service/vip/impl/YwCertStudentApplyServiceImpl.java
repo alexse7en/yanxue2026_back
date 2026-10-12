@@ -370,6 +370,10 @@ public class YwCertStudentApplyServiceImpl implements YwCertStudentApplyService 
 
     private boolean isValidIdCard(String idCard) {
         String text = idCard.trim().toUpperCase();
+        // SP marks a non-resident-ID document during the transitional period.
+        if (text.startsWith("SP")) {
+            return text.substring(2).matches("[A-Z0-9]+");
+        }
         if (!text.matches("\\d{17}[0-9X]")) {
             return false;
         }
